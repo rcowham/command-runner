@@ -1,0 +1,28 @@
+files:
+  - pathtofile: /etc/hosts
+    keywords:
+      -
+    parseAll: true
+    parsingLevel: server
+    sanitizationKeywords:
+      - C1A
+
+  - pathtofile: /p4/common/config/p4_%INSTANCE%.vars
+    keywords:
+      - export MAILTO
+      - export P4USER
+      - export P4MASTER_ID
+    parseAll: false
+    parsingLevel: instance
+    sanitizationKeywords:
+      - sensitive
+      - secret
+
+  - pathtofile: /etc/hosts
+    keywords:
+      -
+    parseAll: true
+    parsingLevel: instance
+    sanitizationKeywords:
+      - CIA
+
