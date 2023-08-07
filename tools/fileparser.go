@@ -269,7 +269,7 @@ func AppendServerParsedData(filePath string, keywords, sanitizationKeywords []st
 	// Create JSON data for the parsed file
 	jsonData := JSONData{
 		Command:     "File parsed: " + filePath,
-		Description: fmt.Sprintf("Keywords: %v, ParseAll: %t, SanitizationKeywords: %v", keywords, parseAll, sanitizationKeywords),
+		Description: fmt.Sprintf("File: %v, Keywords: %v, ParseAll: %t, SanitizationKeywords: %v", filePath, keywords, parseAll, sanitizationKeywords),
 		Output:      EncodeToBase64(sanitizedOutput),
 		MonitorTag:  "pathtofile: " + filePath,
 	}
