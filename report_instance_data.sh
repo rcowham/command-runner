@@ -1,7 +1,7 @@
 #!/bin/bash
 #No longer needed for now TempLog="/home/perforce/workspace/command-runner/output.log"
 #commandRunnerPath="/home/perforce/workspace/command-runner/command-runner"
-commandRunnerPath=/usr/sdp_management/command-runner/command-runner
+commandRunnerPath=$(pwd)/command-runner
 TempLog="/tmp/out.json"
 #No longer need for now commandYamlPath="/home/perforce/workspace/command-runner/commands.yaml"
 rm -f $TempLog
@@ -56,42 +56,9 @@ ConfigFile="/p4/common/config/.push_metrics.cfg"
 # May be overwritten in the config file.
 declare report_instance_logfile="/p4/1/logs/report_instance_data.log"
 
-generate_random_serial() {
-    local characters="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    local serial=""
-    local char_count=${#characters}
-
-    for i in {1..6}; do
-        # Generate a random index to pick a character from the list
-        local random_index=$((RANDOM % char_count))
-        # Append the selected character to the serial
-        serial="${serial}${characters:$random_index:1}"
-    done
-
-    echo "$serial"
-}
-
-
 ### Auto Cloud Configs
 ### Timeout in seconds until we're done attempting to contact internal cloud information
 autoCloudTimeout=5
-
-# ============= DONT TOUCH =============
-declare -A p4varsconfig
-function define_config_p4varsfile () {
-    local var_name="$1"
-    p4varsconfig["$var_name"]="export $var_name="
-}
-# ============= DONT TOUCH =============
-
-# =============P4 Vars File parser config=====================
-# Define the what you would like parsed from P4__INSTANCE__.vars
-define_config_p4varsfile "MAILTO"
-define_config_p4varsfile "P4USER" #EXAMPLE
-define_config_p4varsfile "P4MASTER_ID" #EXAMPLE
-# Add more variables as needed
-
-# ============================================================
 
 declare ThisScript=${0##*/}
 
@@ -119,9 +86,6 @@ function work_instance () {
     echo "Working instance labeled as: $instance"
     # Your processing logic for each instance goes here
     {
-        #Thanks tom
-        #TODO Command runner path
-        #OLD run_if_master.sh $instance $commandRunnerPath -instance=$instance -output=$TempLog -comyaml=$commandYamlPath
         run_if_master.sh $instance $commandRunnerPath -output=$TempLog -instance=$instance
     }
 }
@@ -142,11 +106,11 @@ function get_sdp_instances () {
     # Trim leading space.
     # shellcheck disable=SC2116
     SDPInstanceList=$(echo "$SDPInstanceList")
-    echo "Instance List: $SDPInstanceList"
+    #echo "Instance List: $SDPInstanceList"
 
     # Count instances
     instance_count=$(echo "$SDPInstanceList" | wc -w)
-    echo "Instances Names: $instance_count"
+    #echo "Instances Names: $instance_count"
 
     # Loop through each instance and call the process_instance function
     for instance in $SDPInstanceList; do
@@ -154,25 +118,18 @@ function get_sdp_instances () {
     done
 }
 
-function findSwarm () {
-    SwarmURL=$(p4 -ztag -F %value% property -n P4.Swarm.URL -l)
-    if [[ -n "$SwarmURL" ]]; then
-        echo -e "There be Swarm here: $SwarmURL";
-        swarmRunning=1
-    else
-        echo "We don't need no stink'n bees.";
-fi
-}
+#TODO MOVE THIS INTO COMMAND-RUNNER BELOW
+#function findHAS() {
+#    HASExtensionVersion=$(p4 -ztag -F %ExtVersion% extension --configure Auth::loginhook -o)
+#    if [[ -n "$SwarmURL" ]]; then
+#        echo -e "There be HAS here, version: $HASExtensionVersion";
+#        hasRunning=1
+#    else
+#        echo "No HAS installed.";
+#fi
+#}
 
-function findHAS() {
-    HASExtensionVersion=$(p4 -ztag -F %ExtVersion% extension --configure Auth::loginhook -o)
-    if [[ -n "$SwarmURL" ]]; then
-        echo -e "There be HAS here, version: $HASExtensionVersion";
-        hasRunning=1
-    else
-        echo "No HAS installed.";
-fi
-}
+#TODO RUN THIS BEFORE RUNNING INSTANCE COMMAND-RUNNER otherwise just run the server stuff or atleast check if p4d here
 function findP4D () {
     # Function to p4d check if a process is running
     if pgrep -f "p4d_*" >/dev/null; then
@@ -182,10 +139,6 @@ function findP4D () {
         echo "p4d service is not running."
     fi
 }
-##SwarmURL=$(p4d -k db.property -jd - 2>&1 | grep @P4.Swarm.URL@|cut -d @ -f 6)
-##if [[ -n "$SwarmURL" ]]; then echo -e "There be Swarm here: $SwarmURL"; else echo "We don't need no stink'n bees."; fi
-
-
 
 function usage () {
     local style=${1:-"-h"}  # Default to "-h" if no style argument provided
@@ -389,12 +342,10 @@ if [[ $IsOnPrem -eq 1 ]]; then
 
 fi
 get_sdp_instances
-findSwarm
-findHAS
 
 
 # Loop while pushing as there seem to be temporary password failures quite frequently
-# TODO Look into this.. (Note: Looking at the go build it's potentially related datapushgate's go build)
+# TODO Look into this.. (Note: Looking at the go build it's potentially related datapushgate's go build) --- Regarding password authentication.
 iterations=0
 max_iterations=10
 STATUS=1
