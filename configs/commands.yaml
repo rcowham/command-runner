@@ -39,3 +39,8 @@ server_commands:
   - description: Swarm URL
     command: "p4 property -n P4.Swarm.URL -l 2>&1 | grep -v 'P4.Swarm.URL - no such property.' || true"
     monitor_tag: swarm url
+  - description: SDP Version
+    command: "[ -f /p4/sdp/Version ] && cat /p4/sdp/Version || true"
+    monitor_tag: SDP Version
+
+
