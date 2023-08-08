@@ -1,13 +1,16 @@
 files:
-  - pathtofile: /etc/hosts
+  - pathtofile: "/etc/hosts"
+    monitor_tag: "etc hosts"
     keywords:
-      -
+      - keyword1
+      - keyword2
     parseAll: true
     parsingLevel: server
     sanitizationKeywords:
       - C1A
 
   - pathtofile: /p4/common/config/p4_%INSTANCE%.vars
+    monitor_tag: "p4 vars"
     keywords:
       - export MAILTO
       - export P4USER
@@ -18,11 +21,11 @@ files:
       - sensitive
       - secret
 
-  - pathtofile: /etc/hosts
+  - pathtofile: "/etc/group"
+    monitor_tag: "etc group"
     keywords:
       -
     parseAll: true
     parsingLevel: instance
     sanitizationKeywords:
-      - CIA
-
+      - landscape
