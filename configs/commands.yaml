@@ -36,6 +36,6 @@ server_commands:
   - description: Swarm Present on this server
     command: "[ -f /opt/perforce/swarm/Version ] && cat /opt/perforce/swarm/Version || true"
     monitor_tag: swarm here
-  - description: Swarm Present on this server
-    command: "p4 property -n P4.Swarm.URL -l 2>&1 | grep -v "P4.Swarm.URL - no such property." || true"
+  - description: Swarm URL
+    command: "p4 property -n P4.Swarm.URL -l 2>&1 | grep -v 'P4.Swarm.URL - no such property.' || true"
     monitor_tag: swarm url
