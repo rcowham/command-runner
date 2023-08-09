@@ -1,9 +1,6 @@
 #!/bin/bash
-#No longer needed for now TempLog="/home/perforce/workspace/command-runner/output.log"
-#commandRunnerPath="/home/perforce/workspace/command-runner/command-runner"
 commandRunnerPath=$(pwd)/command-runner
 TempLog="/tmp/out.json"
-#No longer need for now commandYamlPath="/home/perforce/workspace/command-runner/commands.yaml"
 rm -f $TempLog
 # report_instance_data.sh
 #
@@ -20,21 +17,14 @@ rm -f $TempLog
 # Please note you need to make sure that the specified directory below (which may be linked)
 # can be read by the node_exporter user (and is setup via --collector.textfile.directory parameter)
 #
-#TODO Autodectect is this a p4d instance better
 #TODO Better logging
 #TODO NEEDS AZURE testing
-#TODO Expand for support people also ?datapushgateway? lets GO!!
-#     - p4 -Ztag info
-#     - p4 configure show allservers
-#     - p4 servers
-#     - p4 servers -J  -- Concerns about this changing
-#TODO SWARM
-#TODO HAS
 # ============================================================
 # Configuration section
 # Find out if we're in AWS, GCP, or AZURE..
 
 declare -i autoCloud=0
+declare -i p4dInstalled=0
 declare -i p4dRunning=0
 declare -i swarmRunning=0
 declare -i hasRunning=0
@@ -46,7 +36,7 @@ ConfigFile="/p4/common/config/.push_metrics.cfg"
 # ----------------------
 # metrics_host=http://some.ip.or.host:9091
 # metrics_customer=Customer-Name
-# metrics_instance=       <------ #TODO Reconsider this for multiple instances mostly.. I think this should probably be set by the script instead?
+# metrics_instance=server-name
 # metrics_user=username-for-pushgateway
 # metrics_passwd=password-for-pushgateway
 # report_instance_logfile=/log/file/location
@@ -54,6 +44,7 @@ ConfigFile="/p4/common/config/.push_metrics.cfg"
 # ----------------------
 
 # May be overwritten in the config file.
+# TODO Shall we adjust this to fit the worked instance?
 declare report_instance_logfile="/p4/1/logs/report_instance_data.log"
 
 ### Auto Cloud Configs
@@ -66,17 +57,7 @@ function msg () { echo -e "$*"; }
 function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$report_instance_logfile"; msg "$dt: $*"; }
 function bail () { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
 function upcfg () { echo "metrics_cloudtype=$1" >> "$ConfigFile"; } #TODO This could be way more elegant IE error checking the config file but it works
-function p4varsparse_file () {
-    local file_path="$1"
-    while IFS= read -r line; do
-        for key in "${!p4varsconfig[@]}"; do
-            if [[ "$line" == "${p4varsconfig[$key]}"* ]]; then
-                value=${line#${p4varsconfig[$key]}}
-                echo "$key=$value"
-            fi
-        done
-    done < "$file_path"
-}
+
 #
 # Work instances here
 function work_instance () {
@@ -118,20 +99,16 @@ function get_sdp_instances () {
     done
 }
 
-#TODO MOVE THIS INTO COMMAND-RUNNER BELOW
-#function findHAS() {
-#    HASExtensionVersion=$(p4 -ztag -F %ExtVersion% extension --configure Auth::loginhook -o)
-#    if [[ -n "$SwarmURL" ]]; then
-#        echo -e "There be HAS here, version: $HASExtensionVersion";
-#        hasRunning=1
-#    else
-#        echo "No HAS installed.";
-#fi
-#}
 
-#TODO RUN THIS BEFORE RUNNING INSTANCE COMMAND-RUNNER otherwise just run the server stuff or atleast check if p4d here
-function findP4D () {
-    # Function to p4d check if a process is running
+findP4D() {
+    # Check if p4d is installed
+    if ! command -v p4d >/dev/null; then
+        echo "p4d is not installed."
+        p4dInstalled=1
+        return
+    fi
+
+    # Function to check if a p4d process is running
     if pgrep -f "p4d_*" >/dev/null; then
         echo "p4d service is running."
         p4dRunning=1
@@ -341,8 +318,12 @@ if [[ $IsOnPrem -eq 1 ]]; then
     $commandRunnerPath -output=$TempLog -server
 
 fi
-get_sdp_instances
-
+findP4D
+##OLD get_sdp_instances
+# If p4d is installed, then call the get_sdp_instances function
+if [[ $p4dInstalled -eq 1 ]]; then
+    get_sdp_instances
+fi
 
 # Loop while pushing as there seem to be temporary password failures quite frequently
 # TODO Look into this.. (Note: Looking at the go build it's potentially related datapushgate's go build) --- Regarding password authentication.
