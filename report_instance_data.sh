@@ -104,10 +104,12 @@ findP4D() {
     # Check if p4d is installed
     if ! command -v p4d >/dev/null; then
         echo "p4d is not installed."
-        p4dInstalled=1
+        p4dInstalled=0
         return
+    else
+        echo "p4d is installed."
+        p4dInstalled=1
     fi
-
     # Function to check if a p4d process is running
     if pgrep -f "p4d_*" >/dev/null; then
         echo "p4d service is running."
