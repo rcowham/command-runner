@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // GetAWSToken retrieves the AWS metadata token.
@@ -45,16 +47,16 @@ func GetAWSInstanceIdentityInfo(outputFilePath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Instance Identity Document Raw:")
-	fmt.Println(string(documentOUT)) // Debug print to see the raw documentOUT content
+	logrus.Debug("Instance Identity Document Raw:")
+	logrus.Debug(string(documentOUT)) // Debug print to see the raw documentOUT content
 
 	metadataURL := "http://169.254.169.254/latest/meta-data/tags/instance/"
 	metadataOUT, err := getAWSEndpoint(token, metadataURL)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Metadata Raw:")
-	fmt.Println(string(metadataOUT)) // Debug print to see the raw metadataOUT content
+	logrus.Debug("Metadata Raw:")
+	logrus.Debug(string(metadataOUT)) // Debug print to see the raw metadataOUT content
 
 	// Get the existing JSON data from the file
 	existingJSONData, err := ReadJSONFromFile(outputFilePath)
@@ -114,6 +116,7 @@ func getAWSEndpoint(token, url string) ([]byte, error) {
 		return body, nil
 	} else if resp.StatusCode != http.StatusOK {
 		// If the response status code is not 200 OK or 404 Not Found, return an error
+		logrus.Errorf("Unexpected response status:: %v", resp.Status)
 		return nil, fmt.Errorf("unexpected response status: %s", resp.Status)
 	}
 

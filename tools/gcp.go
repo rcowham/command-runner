@@ -48,7 +48,7 @@ func GetGCPInstanceIdentityInfo(outputFilePath string) error {
 		MonitorTag:  "GCP",
 	})
 
-	existingJSONData = append(existingJSONData)
+	// existingJSONData = append(existingJSONData)
 
 	// Write the updated JSON data back to the file
 	if err := WriteJSONToFile(existingJSONData, outputFilePath); err != nil {

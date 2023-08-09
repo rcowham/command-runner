@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -24,6 +25,7 @@ type FileConfig struct {
 func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
+		logrus.Errorf("error reading YAML config: %v", err)
 		return fmt.Errorf("error reading YAML config: %w", err)
 	}
 
@@ -42,6 +44,7 @@ func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath st
 func FileParserFromYAMLConfigInstance(configFilePath, outputFilePath, instance string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
+
 		return fmt.Errorf("error reading YAML config: %w", err)
 	}
 
@@ -79,6 +82,7 @@ func parseAndAppendAtInstanceLevel(filePath string, fileConfig FileConfig, outpu
 func parseContent(filePath string, fileConfig FileConfig) (string, error) {
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		logrus.Errorf("failed to read file: %q: %v", filePath, err)
 		return "", fmt.Errorf("failed to read file %q: %w", filePath, err)
 	}
 	content := string(fileContent)
@@ -122,11 +126,13 @@ func sanitizeOutput(output string, sanitizationKeywords []string) string {
 func readYAMLConfig(configFilePath string) (*FileParserConfig, error) {
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
+		logrus.Errorf("Failed to read YAML config file: %v", err)
 		return nil, fmt.Errorf("failed to read YAML config file: %w", err)
 	}
 
 	var config FileParserConfig
 	if err := yaml.Unmarshal(content, &config); err != nil {
+		logrus.Errorf("failed to unmarshal YAML content: %v", err)
 		return nil, fmt.Errorf("failed to unmarshal YAML content: %w", err)
 	}
 

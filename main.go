@@ -1,5 +1,5 @@
 /*
-TODO Error parsing files at the instance level breaks it so if it cant parse the file its stops.
+TODO
 */
 package main
 
@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -26,8 +27,10 @@ var (
 	cloudProvider          string
 	configFilePath         string
 )
+var debug bool
 
 func init() {
+	flag.BoolVar(&debug, "debug", false, "Enable debug logging")
 	flag.StringVar(&outputJSONFilePath, "output", "out.json", "Path to the output JSON file")
 
 	flag.StringVar(&cloudProvider, "cloud", "", "Cloud provider (aws, gcp, or azure)")
@@ -39,17 +42,22 @@ func init() {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
-	// Modify the outputJSONFilePath to write to the "output" directory
-	//outputJSONFilePath = "output/out.json"
-
+	// Setup the logrus level
+	if debug {
+		logrus.SetLevel(logrus.DebugLevel)
+	} else {
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }
 
+/*
 // Function to get the absolute path for a file or directory
-func getAbsolutePath(baseDir, relPath string) (string, error) {
-	absPath := filepath.Join(baseDir, relPath)
-	return absPath, nil
-}
 
+	func getAbsolutePath(baseDir, relPath string) (string, error) {
+		absPath := filepath.Join(baseDir, relPath)
+		return absPath, nil
+	}
+*/
 func main() {
 	var instanceArg string
 	var serverArg bool
@@ -63,7 +71,7 @@ func main() {
 	if configFilePath == "" {
 		exePath, err := os.Executable()
 		if err != nil {
-			fmt.Println("Error getting executable path:", err)
+			logrus.Errorf("Error getting executable path: %v", err)
 			os.Exit(1)
 		}
 
@@ -73,7 +81,7 @@ func main() {
 	// Read the config file
 	configFile, err := os.Open(configFilePath)
 	if err != nil {
-		fmt.Println("Error opening config file:", err)
+		logrus.Errorf("Error opening config file: %v", err)
 		os.Exit(1)
 	}
 	defer configFile.Close()
@@ -81,7 +89,7 @@ func main() {
 	var config Config
 	decoder := yaml.NewDecoder(configFile)
 	if err := decoder.Decode(&config); err != nil {
-		fmt.Println("Error decoding config file:", err)
+		logrus.Errorf("Error decoding config file: %v", err)
 		os.Exit(1)
 	}
 
@@ -94,9 +102,8 @@ func main() {
 	}
 
 	// Get absolute path for "configs/commands.yaml"
-	//, err := getAbsolutePath(configsDir, config.CommandsYAMLPath)
 	if err != nil {
-		fmt.Println("Error getting absolute path for commands.yaml:", err)
+		logrus.Errorf("Error getting absolute path for commands.yaml: %v", err)
 		os.Exit(1)
 	}
 
@@ -107,20 +114,20 @@ func main() {
 			//Logic to handle AWS-related functionality
 			err := tools.GetAWSInstanceIdentityInfo(outputJSONFilePath)
 			if err != nil {
-				fmt.Println("Error getting AWS instance identity info:", err)
+				logrus.Errorf("Error getting AWS instance identity info: %v", err)
 				os.Exit(1)
 			}
 		case "gcp":
 			//Logic to handle GCP-related functionality
 			err := tools.GetGCPInstanceIdentityInfo(outputJSONFilePath)
 			if err != nil {
-				fmt.Println("Error getting GCP instance identity info:", err)
+				logrus.Errorf("Error getting GCP instance identity info: %v", err)
 				os.Exit(1)
 			}
 		case "azure":
 			// Add logic to handle Azure-related functionality
 		default:
-			fmt.Println("Error: Invalid cloud provider. Please specify aws, gcp, or azure.")
+			logrus.Errorf("Error: Invalid cloud provider. Please specify aws, gcp, or azure.")
 			os.Exit(1)
 		}
 	}
@@ -131,13 +138,13 @@ func main() {
 		// Execute and encode server commands
 		serverCommands, err := tools.ReadServerCommandsFromYAML(yamlCommandsFilePath)
 		if err != nil {
-			fmt.Println("Error reading server commands from YAML:", err)
+			logrus.Errorf("Error reading server commands from YAML: %v", err)
 			os.Exit(1)
 		}
 
 		base64ServerOutputs, err := tools.ExecuteAndEncodeCommands(serverCommands)
 		if err != nil {
-			fmt.Println("Error executing server commands:", err)
+			logrus.Errorf("Error executing server commands: %v", err)
 			os.Exit(1)
 		}
 
@@ -155,7 +162,7 @@ func main() {
 		// Get the existing JSON data from the file (if it exists)
 		existingJSONData, err := tools.ReadJSONFromFile(outputJSONFilePath)
 		if err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Error reading existing JSON data from %s: %s\n", outputJSONFilePath, err)
+			logrus.Errorf("Error reading existing JSON data from %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
 
@@ -163,48 +170,34 @@ func main() {
 		allJSONData := append(existingJSONData, serverJSONData...)
 		err = tools.AppendParsedDataToFile(serverJSONData, outputJSONFilePath)
 		if err != nil {
-			fmt.Printf("Error appending server JSON data to %s: %s\n", outputJSONFilePath, err)
+			logrus.Errorf("Error appending server JSON data to %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
 		// Write the updated JSON data back to the file
 		if err := tools.WriteJSONToFile(allJSONData, outputJSONFilePath); err != nil {
-			fmt.Printf("Error writing server JSON data to %s: %s\n", outputJSONFilePath, err)
+			logrus.Errorf("Error writing server JSON data to %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
-		/*
-			// Get the hostname of the server
-			hostname, err := os.Hostname()
-			if err != nil {
-				fmt.Println("Error getting hostname:", err)
-				os.Exit(1)
-			}
-		*/
-		// File parsing for the server level
-		//		fmt.Println("File Parser YAML Path (Server):", config.FileParserYAMLPath) // Print the file parser YAML path for server
-
-		/* NEEDS TO BE LOOKED INTO SILLY APPENDING and file path issues
-		err = tools.FileParserFromYAMLConfigServer(config.FileParserYAMLPath, outputJSONFilePath)
+		err = tools.FileParserFromYAMLConfigServer(yamlFileparserFilePath, outputJSONFilePath)
 		if err != nil {
-			fmt.Println("Error parsing files at the server level:", err)
+			logrus.Errorf("Error parsing files at the server level: %v", err)
 			os.Exit(1)
 		}
-		fmt.Printf("%s Server commands executed and output appended to %s.\n", hostname, outputJSONFilePath)
-		*/
+		logrus.Infof("Server commands executed and output appended to %s.", outputJSONFilePath)
+
 	}
 
 	// Check if the instance argument is provided
 	if instanceArg != "" {
-		//fmt.Println("Instance ARG passed")
-
 		instanceCommands, err := tools.ReadInstanceCommandsFromYAML(yamlCommandsFilePath, instanceArg)
 		if err != nil {
-			fmt.Println("Error reading instance commands from YAML:", err)
+			logrus.Errorf("Error reading instance commands from YAML: %v", err)
 			os.Exit(1)
 		}
 
 		base64InstanceOutputs, err := tools.ExecuteAndEncodeCommands(instanceCommands)
 		if err != nil {
-			fmt.Println("Error executing instance commands:", err)
+			logrus.Errorf("Error executing instance commands: %v", err)
 			os.Exit(1)
 		}
 
@@ -222,7 +215,7 @@ func main() {
 		// Get the existing JSON data from the file (if it exists)
 		existingJSONData, err := tools.ReadJSONFromFile(outputJSONFilePath)
 		if err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Error reading existing JSON data from %s: %s\n", outputJSONFilePath, err)
+			logrus.Errorf("Error reading existing JSON data from %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
 
@@ -231,24 +224,21 @@ func main() {
 
 		// Write the updated JSON data back to the file
 		if err := tools.WriteJSONToFile(allJSONData, outputJSONFilePath); err != nil {
-			fmt.Printf("Error writing instance JSON data to %s: %s\n", outputJSONFilePath, err)
+			logrus.Errorf("Error writing instance JSON data to %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
 		// File parsing for the instance level
-		//fmt.Println("File Parser YAML Path (Instance):", config.FileParserYAMLPath) // Print the file parser YAML path for instance
 		err = tools.FileParserFromYAMLConfigInstance(yamlFileparserFilePath, outputJSONFilePath, instanceArg)
 		if err != nil {
-			fmt.Println("Error parsing files at the instance level:", err)
+			logrus.Errorf("Error parsing files at the instance level: %v", err)
 			os.Exit(1)
 		}
-		//fmt.Printf("Instance %s commands executed and output appended to %s.\n", instanceArg, outputJSONFilePath)
+		logrus.Infof("Instance commands executed and output appended to %s.", outputJSONFilePath)
+
 	}
 
 	if flag.NFlag() == 0 {
 		flag.Usage()
 	}
 
-	if flag.NFlag() == 0 {
-		flag.Usage()
-	}
 }
