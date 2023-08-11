@@ -11,37 +11,35 @@ import (
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	//	"gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	CommandsYAMLPath   string `yaml:"commands_yaml"`
-	FileParserYAMLPath string `yaml:"fileparser_yaml"`
-	OutputJSONPath     string `yaml:"output_json_path"`
-}
+// Define default paths
+const (
+	defaultCommandsYAMLPath   = "configs/commands.yaml"
+	defaultFileParserYAMLPath = "configs/fileparser.yaml"
+	defaultOutputJSONPath     = "/tmp/out.json"
+)
 
 var (
-	outputJSONFilePath     string
-	yamlCommandsFilePath   string
-	yamlFileparserFilePath string
+	outputJSONFilePath     = defaultOutputJSONPath
+	yamlCommandsFilePath   = defaultCommandsYAMLPath
+	yamlFileparserFilePath = defaultFileParserYAMLPath
 	cloudProvider          string
-	configFilePath         string
+	debug                  bool
 )
-var debug bool
 
 func init() {
 	flag.BoolVar(&debug, "debug", false, "Enable debug logging")
-	flag.StringVar(&outputJSONFilePath, "output", "out.json", "Path to the output JSON file")
-
+	flag.StringVar(&outputJSONFilePath, "output", defaultOutputJSONPath, "Path to the output JSON file")
 	flag.StringVar(&cloudProvider, "cloud", "", "Cloud provider (aws, gcp, or azure)")
-
-	flag.StringVar(&configFilePath, "config", "", "Path to the config file")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
+
 	// Setup the logrus level
 	if debug {
 		logrus.SetLevel(logrus.DebugLevel)
@@ -50,15 +48,19 @@ func init() {
 	}
 }
 
-/*
-// Function to get the absolute path for a file or directory
-
-	func getAbsolutePath(baseDir, relPath string) (string, error) {
-		absPath := filepath.Join(baseDir, relPath)
-		return absPath, nil
-	}
-*/
 func main() {
+	// Determine the directory of the command-runner executable
+	exePath, err := os.Executable()
+	if err != nil {
+		logrus.Errorf("Error getting executable path: %v", err)
+		os.Exit(1)
+	}
+	exeDir := filepath.Dir(exePath)
+
+	// Construct the paths for commands.yaml and fileparser.yaml
+	yamlCommandsFilePath = filepath.Join(exeDir, defaultCommandsYAMLPath)
+	yamlFileparserFilePath = filepath.Join(exeDir, defaultFileParserYAMLPath)
+
 	var instanceArg string
 	var serverArg bool
 
@@ -66,47 +68,48 @@ func main() {
 	flag.BoolVar(&serverArg, "server", false, "Server argument for the command-runner")
 
 	flag.Parse()
+	/*
+	   	// If config file path is not provided, use the default
+	   	if configFilePath == "" {
+	   		exePath, err := os.Executable()
+	   		if err != nil {
+	   			logrus.Errorf("Error getting executable path: %v", err)
+	   			os.Exit(1)
+	   		}
 
-	// If config file path is not provided, use the default
-	if configFilePath == "" {
-		exePath, err := os.Executable()
-		if err != nil {
-			logrus.Errorf("Error getting executable path: %v", err)
-			os.Exit(1)
-		}
+	   		configFilePath = filepath.Join(filepath.Dir(exePath), "configs", "config.yaml")
+	   	}
 
-		configFilePath = filepath.Join(filepath.Dir(exePath), "configs", "config.yaml")
-	}
+	   	// Read the config file
+	   	configFile, err := os.Open(configFilePath)
+	   	if err != nil {
+	   		logrus.Errorf("Error opening config file: %v", err)
+	   		os.Exit(1)
+	   	}
+	   	defer configFile.Close()
 
-	// Read the config file
-	configFile, err := os.Open(configFilePath)
-	if err != nil {
-		logrus.Errorf("Error opening config file: %v", err)
-		os.Exit(1)
-	}
-	defer configFile.Close()
+	   	var config Config
+	   	decoder := yaml.NewDecoder(configFile)
+	   	if err := decoder.Decode(&config); err != nil {
+	   		logrus.Errorf("Error decoding config file: %v", err)
+	   		os.Exit(1)
+	   	}
 
-	var config Config
-	decoder := yaml.NewDecoder(configFile)
-	if err := decoder.Decode(&config); err != nil {
-		logrus.Errorf("Error decoding config file: %v", err)
-		os.Exit(1)
-	}
 
-	// Retrieve the paths from the config struct
-	configsDir := filepath.Dir(configFilePath)
-	yamlCommandsFilePath = filepath.Join(configsDir, config.CommandsYAMLPath)
-	yamlFileparserFilePath = filepath.Join(configsDir, config.FileParserYAMLPath)
-	if outputJSONFilePath == "" {
-		outputJSONFilePath = filepath.Join(config.OutputJSONPath)
-	}
+	   // Retrieve the paths from the config struct
+	   //	configsDir := filepath.Dir(configFilePath)
+	   	yamlCommandsFilePath = filepath.Join(configsDir, config.CommandsYAMLPath)
+	   	yamlFileparserFilePath = filepath.Join(configsDir, config.FileParserYAMLPath)
+	   	if outputJSONFilePath == "" {
+	   		outputJSONFilePath = filepath.Join(config.OutputJSONPath)
+	   	}
 
-	// Get absolute path for "configs/commands.yaml"
-	if err != nil {
-		logrus.Errorf("Error getting absolute path for commands.yaml: %v", err)
-		os.Exit(1)
-	}
-
+	   //	// Get absolute path for "configs/commands.yaml"
+	   	if err != nil {
+	   		logrus.Errorf("Error getting absolute path for commands.yaml: %v", err)
+	   		os.Exit(1)
+	   	}
+	*/
 	// If -cloud is provided, check if it's a valid cloud provider
 	if cloudProvider != "" {
 		switch cloudProvider {
