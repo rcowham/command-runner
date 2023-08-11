@@ -11,22 +11,20 @@ import (
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
-	//	"gopkg.in/yaml.v2"
+	//"gopkg.in/yaml.v2"
 )
 
 // Define default paths
 const (
-	defaultCommandsYAMLPath   = "configs/commands.yaml"
-	defaultFileParserYAMLPath = "configs/fileparser.yaml"
-	defaultOutputJSONPath     = "/tmp/out.json"
+	defaultCombineYAMLPath = "configs/combine.yaml"
+	defaultOutputJSONPath  = "/tmp/out.json"
 )
 
 var (
-	outputJSONFilePath     = defaultOutputJSONPath
-	yamlCommandsFilePath   = defaultCommandsYAMLPath
-	yamlFileparserFilePath = defaultFileParserYAMLPath
-	cloudProvider          string
-	debug                  bool
+	outputJSONFilePath  = defaultOutputJSONPath
+	yamlCombineFilePath = defaultCombineYAMLPath
+	cloudProvider       string
+	debug               bool
 )
 
 func init() {
@@ -57,9 +55,8 @@ func main() {
 	}
 	exeDir := filepath.Dir(exePath)
 
-	// Construct the paths for commands.yaml and fileparser.yaml
-	yamlCommandsFilePath = filepath.Join(exeDir, defaultCommandsYAMLPath)
-	yamlFileparserFilePath = filepath.Join(exeDir, defaultFileParserYAMLPath)
+	// Construct the path for combine.yaml
+	yamlCombineFilePath = filepath.Join(exeDir, defaultCombineYAMLPath)
 
 	var instanceArg string
 	var serverArg bool
@@ -68,80 +65,36 @@ func main() {
 	flag.BoolVar(&serverArg, "server", false, "Server argument for the command-runner")
 
 	flag.Parse()
-	/*
-	   	// If config file path is not provided, use the default
-	   	if configFilePath == "" {
-	   		exePath, err := os.Executable()
-	   		if err != nil {
-	   			logrus.Errorf("Error getting executable path: %v", err)
-	   			os.Exit(1)
-	   		}
 
-	   		configFilePath = filepath.Join(filepath.Dir(exePath), "configs", "config.yaml")
-	   	}
-
-	   	// Read the config file
-	   	configFile, err := os.Open(configFilePath)
-	   	if err != nil {
-	   		logrus.Errorf("Error opening config file: %v", err)
-	   		os.Exit(1)
-	   	}
-	   	defer configFile.Close()
-
-	   	var config Config
-	   	decoder := yaml.NewDecoder(configFile)
-	   	if err := decoder.Decode(&config); err != nil {
-	   		logrus.Errorf("Error decoding config file: %v", err)
-	   		os.Exit(1)
-	   	}
-
-
-	   // Retrieve the paths from the config struct
-	   //	configsDir := filepath.Dir(configFilePath)
-	   	yamlCommandsFilePath = filepath.Join(configsDir, config.CommandsYAMLPath)
-	   	yamlFileparserFilePath = filepath.Join(configsDir, config.FileParserYAMLPath)
-	   	if outputJSONFilePath == "" {
-	   		outputJSONFilePath = filepath.Join(config.OutputJSONPath)
-	   	}
-
-	   //	// Get absolute path for "configs/commands.yaml"
-	   	if err != nil {
-	   		logrus.Errorf("Error getting absolute path for commands.yaml: %v", err)
-	   		os.Exit(1)
-	   	}
-	*/
-	// If -cloud is provided, check if it's a valid cloud provider
+	// Handle cloud providers
 	if cloudProvider != "" {
 		switch cloudProvider {
 		case "aws":
-			//Logic to handle AWS-related functionality
 			err := tools.GetAWSInstanceIdentityInfo(outputJSONFilePath)
 			if err != nil {
 				logrus.Errorf("Error getting AWS instance identity info: %v", err)
 				os.Exit(1)
 			}
 		case "gcp":
-			//Logic to handle GCP-related functionality
 			err := tools.GetGCPInstanceIdentityInfo(outputJSONFilePath)
 			if err != nil {
 				logrus.Errorf("Error getting GCP instance identity info: %v", err)
 				os.Exit(1)
 			}
 		case "azure":
-			// Add logic to handle Azure-related functionality
+			// Add Azure handling logic here
 		default:
 			logrus.Errorf("Error: Invalid cloud provider. Please specify aws, gcp, or azure.")
 			os.Exit(1)
 		}
 	}
 
-	// Check if the server argument is provided
+	// Handle server commands and file parsing
 	if serverArg {
-		//		fmt.Println("Server ARG passed")
-		// Execute and encode server commands
-		serverCommands, err := tools.ReadServerCommandsFromYAML(yamlCommandsFilePath)
+		// Replace ReadServerCommandsFromYAML with a new function that gets server commands from combine.yaml
+		serverCommands, err := tools.ReadServerCommandsFromYAML(yamlCombineFilePath)
 		if err != nil {
-			logrus.Errorf("Error reading server commands from YAML: %v", err)
+			logrus.Errorf("Error reading server commands from combine YAML: %v", err)
 			os.Exit(1)
 		}
 
@@ -181,20 +134,21 @@ func main() {
 			logrus.Errorf("Error writing server JSON data to %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
-		err = tools.FileParserFromYAMLConfigServer(yamlFileparserFilePath, outputJSONFilePath)
+		// For file parsing
+		err = tools.FileParserFromYAMLConfigServer(yamlCombineFilePath, outputJSONFilePath)
 		if err != nil {
 			logrus.Errorf("Error parsing files at the server level: %v", err)
 			os.Exit(1)
 		}
 		logrus.Infof("Server commands executed and output appended to %s.", outputJSONFilePath)
-
 	}
 
-	// Check if the instance argument is provided
+	// Handle instance commands and file parsing
 	if instanceArg != "" {
-		instanceCommands, err := tools.ReadInstanceCommandsFromYAML(yamlCommandsFilePath, instanceArg)
+		// Replace ReadInstanceCommandsFromYAML with a new function that gets instance commands from combine.yaml
+		instanceCommands, err := tools.ReadInstanceCommandsFromYAML(yamlCombineFilePath, instanceArg)
 		if err != nil {
-			logrus.Errorf("Error reading instance commands from YAML: %v", err)
+			logrus.Errorf("Error reading instance commands from combine YAML: %v", err)
 			os.Exit(1)
 		}
 
@@ -230,14 +184,13 @@ func main() {
 			logrus.Errorf("Error writing instance JSON data to %s: %s\n", outputJSONFilePath, err)
 			os.Exit(1)
 		}
-		// File parsing for the instance level
-		err = tools.FileParserFromYAMLConfigInstance(yamlFileparserFilePath, outputJSONFilePath, instanceArg)
+		// For file parsing at the instance level
+		err = tools.FileParserFromYAMLConfigInstance(yamlCombineFilePath, outputJSONFilePath, instanceArg)
 		if err != nil {
 			logrus.Errorf("Error parsing files at the instance level: %v", err)
 			os.Exit(1)
 		}
 		logrus.Infof("Instance commands executed and output appended to %s.", outputJSONFilePath)
-
 	}
 
 	if flag.NFlag() == 0 {
