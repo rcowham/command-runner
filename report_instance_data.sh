@@ -1,5 +1,7 @@
 #!/bin/bash
-commandRunnerPath=$(pwd)/command-runner
+cmdrnrscriptDir=$(dirname "$0")
+commandRunnerPath="$cmdrnrscriptDir/command-runner"
+echo "Command Runner Path: $commandRunnerPath"
 TempLog="/tmp/out.json"
 rm -f $TempLog
 # report_instance_data.sh
