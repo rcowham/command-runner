@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"command-runner/schema"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -8,19 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
-
-type FileParserConfig struct {
-	Files []FileConfig `yaml:"files"`
-}
-
-type FileConfig struct {
-	PathToFile           string   `yaml:"pathtofile"`
-	Keywords             []string `yaml:"keywords"`
-	ParseAll             bool     `yaml:"parseAll"`
-	ParsingLevel         string   `yaml:"parsingLevel"`
-	SanitizationKeywords []string `yaml:"sanitizationKeywords"`
-	MonitorTag           string   `yaml:"monitor_tag"`
-}
 
 func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath string) error {
 	config, err := readYAMLConfig(configFilePath)
@@ -61,7 +49,7 @@ func FileParserFromYAMLConfigInstance(configFilePath, outputFilePath, instance s
 	return nil
 }
 
-func parseAndAppendAtServerLevel(filePath string, fileConfig FileConfig, outputFilePath string) error {
+func parseAndAppendAtServerLevel(filePath string, fileConfig schema.FileConfig, outputFilePath string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
 		return err
@@ -70,7 +58,7 @@ func parseAndAppendAtServerLevel(filePath string, fileConfig FileConfig, outputF
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
-func parseAndAppendAtInstanceLevel(filePath string, fileConfig FileConfig, outputFilePath, instanceArg string) error {
+func parseAndAppendAtInstanceLevel(filePath string, fileConfig schema.FileConfig, outputFilePath, instanceArg string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
 		return err
@@ -79,7 +67,7 @@ func parseAndAppendAtInstanceLevel(filePath string, fileConfig FileConfig, outpu
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
-func parseContent(filePath string, fileConfig FileConfig) (string, error) {
+func parseContent(filePath string, fileConfig schema.FileConfig) (string, error) {
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		logrus.Errorf("failed to read file: %q: %v", filePath, err)
@@ -123,14 +111,14 @@ func sanitizeOutput(output string, sanitizationKeywords []string) string {
 	return strings.Join(sanitizedOutputLines, "\n")
 }
 
-func readYAMLConfig(configFilePath string) (*FileParserConfig, error) {
+func readYAMLConfig(configFilePath string) (*schema.FileParserConfig, error) {
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		logrus.Errorf("Failed to read YAML config file: %v", err)
 		return nil, fmt.Errorf("failed to read YAML config file: %w", err)
 	}
 
-	var config FileParserConfig
+	var config schema.FileParserConfig
 	if err := yaml.Unmarshal(content, &config); err != nil {
 		logrus.Errorf("failed to unmarshal YAML content: %v", err)
 		return nil, fmt.Errorf("failed to unmarshal YAML content: %w", err)
@@ -139,7 +127,7 @@ func readYAMLConfig(configFilePath string) (*FileParserConfig, error) {
 	return &config, nil
 }
 
-func appendParsedData(filePath string, parsedContent string, fileConfig FileConfig, outputFilePath string) error {
+func appendParsedData(filePath string, parsedContent string, fileConfig schema.FileConfig, outputFilePath string) error {
 	// Now sanitize the parsed content
 	sanitizedOutput := sanitizeOutput(parsedContent, fileConfig.SanitizationKeywords)
 

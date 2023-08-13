@@ -2,6 +2,7 @@ package tools
 
 import (
 	"bytes"
+	"command-runner/schema"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -13,19 +14,6 @@ import (
 )
 
 // TODO The description for each instance should be relative to their repective instance name when running specific instance commands
-//
-// Define a struct to hold each command's details
-type Command struct {
-	Description string `yaml:"description"`
-	Command     string `yaml:"command"`
-	MonitorTag  string `yaml:"monitor_tag"`
-}
-
-// Define a struct to hold the configuration from the YAML file for instance_commands and server_commands
-type CommandConfig struct {
-	InstanceCommands []Command `yaml:"instance_commands"`
-	ServerCommands   []Command `yaml:"server_commands"`
-}
 
 type JSONData struct {
 	Command     string `json:"command"`
@@ -35,14 +23,13 @@ type JSONData struct {
 }
 
 // Function to read instance_commands from the YAML file
-// Function to read instance_commands from the YAML file
-func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]Command, error) {
+func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	var config CommandConfig
+	var config schema.CommandConfig
 	if err := yaml.Unmarshal(yamlFile, &config); err != nil {
 		return nil, err
 	}
@@ -56,21 +43,21 @@ func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]Command, erro
 }
 
 // Function to read server_commands from the YAML file
-func ReadServerCommandsFromYAML(filePath string) ([]Command, error) {
+func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	var config CommandConfig
+	var config schema.CommandConfig
 	if err := yaml.Unmarshal(yamlFile, &config); err != nil {
 		return nil, err
 	}
 
 	return config.ServerCommands, nil
 }
-func ReadCommandsFromYAML(filePath, instanceArg string) ([]Command, error) {
-	commands := make([]Command, 0)
+func ReadCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
+	commands := make([]schema.Command, 0)
 
 	instanceCommands, err := ReadInstanceCommandsFromYAML(filePath, instanceArg)
 	if err != nil {
@@ -102,7 +89,7 @@ func ExecuteShellCommand(command string) (string, string, error) {
 }
 
 // Function to execute commands and encode output to Base64
-func ExecuteAndEncodeCommands(commands []Command) ([]string, error) {
+func ExecuteAndEncodeCommands(commands []schema.Command) ([]string, error) {
 	var base64Outputs []string
 
 	for _, cmd := range commands {
