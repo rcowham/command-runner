@@ -75,7 +75,7 @@ upcfg() {
 #run command-runner run!
 run_command-runner() {
     local instance_arg="$1"
-    shift  
+    shift
 
     if [[ "$instance_arg" == "-instance="* ]]; then
         local instance_value=${instance_arg#-instance=}
@@ -108,7 +108,6 @@ function work_instance () {
     log "Working instance labeled as: $instance"
     # Your processing logic for each instance goes here
     {
-        #OLD but good run_if_master.sh $instance $commandRunnerPath -output=$TempLog -instance=$instance
         run_command-runner -instance=$instance
     }
 }
@@ -130,10 +129,8 @@ function get_sdp_instances () {
     # shellcheck disable=SC2116
     SDPInstanceList=$(echo "$SDPInstanceList")
 
-
     # Count instances
     instance_count=$(echo "$SDPInstanceList" | wc -w)
-
 
     # Loop through each instance and call the process_instance function
     for instance in $SDPInstanceList; do
@@ -227,7 +224,6 @@ metrics_passwd=$(grep metrics_passwd "$ConfigFile" | awk -F= '{print $2}')
 metrics_logfile=$(grep metrics_logfile "$ConfigFile" | awk -F= '{print $2}')
 report_instance_logfile=$(grep report_instance_logfile "$ConfigFile" | awk -F= '{print $2}')
 metrics_cloudtype=$(grep metrics_cloudtype "$ConfigFile" | awk -F= '{print $2}')
-
 # Set all thats not set to Unset
 metrics_host=${metrics_host:-Unset}
 metrics_customer=${metrics_customer:-Unset}
@@ -242,7 +238,6 @@ if [[ $metrics_host == Unset || $metrics_user == Unset || $metrics_passwd == Uns
     exit 1
 fi
 log autocloud is set to $autoCloud
-
 ## Auto set cloudtype in config?
 if [[ $metrics_cloudtype == Unset ]]; then
     log "No Instance Type Defined"
@@ -263,10 +258,10 @@ pushd $(dirname "$metrics_logfile")
 
 if [ $autoCloud -eq 1 ]; then
 {
-    msg "Using autoCloud"
+    log "Using autoCloud"
     #==========================
     # Check if running on AZURE
-    msg "Checking for AZURE"
+    log "Checking for AZURE"
     curl --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep -q "location"
     if [ $? -eq 0 ]; then
         curl --connect-timeout $autoCloudTimeout -s curl --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep "location"  | awk -F\" '{print $4}' >/dev/null
@@ -359,8 +354,8 @@ if [[ $IsOnPrem -eq 1 ]]; then
     run_command-runner -server
 
 fi
+
 findP4D
-# If p4d is installed, then call the get_sdp_instances function
 if [[ $p4dInstalled -eq 1 ]]; then
     get_sdp_instances
 fi
