@@ -1,0 +1,5 @@
+- pathtofile: "/etc/hosts"
+  keywords: []
+  parseAll: true
+    parsingLevel: server  # Incorrect indentation here
+  sanitizationKeywords: []

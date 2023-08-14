@@ -1,0 +1,18 @@
+open_files:
+  - pathtofile: "/etc/hosts"
+    monitor_tag: "etc hosts"
+    keywords: []
+    parseAll: true
+    parsingLevel: server
+    sanitizationKeywords:
+      - C1A
+
+instance_commands:
+  - description: "p4 configure show allservers"
+    command: ""  # Here the command is empty, representing a missing command
+    monitor_tag: "p4 configure"
+    
+server_commands:
+  - description: Server host information
+    command: hostnamectl
+    monitor_tag: hostnamectl

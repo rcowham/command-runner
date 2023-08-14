@@ -46,7 +46,6 @@ ConfigFile="/p4/common/config/.push_metrics.cfg"
 # ----------------------
 
 # May be overwritten in the config file.
-# TODO Shall we adjust this to fit the worked instance?
 declare report_instance_logfile="/p4/1/logs/report_instance_data.log"
 
 ### Auto Cloud Configs
@@ -58,18 +57,59 @@ declare ThisScript=${0##*/}
 function msg () { echo -e "$*"; }
 function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$report_instance_logfile"; msg "$dt: $*"; }
 function bail () { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
-function upcfg () { echo "metrics_cloudtype=$1" >> "$ConfigFile"; } #TODO This could be way more elegant IE error checking the config file but it works
+#function upcfg () { msg "metrics_cloudtype=$1" >> "$ConfigFile"; } #TODO This could be way more elegant IE error checking the config file but it works
+upcfg() {
+    local metrics_cloudtype="$1"
 
-#
+    # Log the action
+    log "Updating ConfigFile with metrics_cloudtype=$metrics_cloudtype"
+
+    # Attempt to append to the ConfigFile and log any potential errors
+    echo "metrics_cloudtype=$metrics_cloudtype" >> "$ConfigFile" 2>> "$report_instance_logfile"
+    if [ $? -ne 0 ]; then
+        log "Error updating $ConfigFile with metrics_cloudtype=$metrics_cloudtype"
+    fi
+}
+
+
+#run command-runner run!
+run_command-runner() {
+    local instance_arg="$1"
+    shift  
+
+    if [[ "$instance_arg" == "-instance="* ]]; then
+        local instance_value=${instance_arg#-instance=}
+        local command="run_if_master.sh $instance_value $commandRunnerPath $@ -output=$TempLog $instance_arg"
+    else
+        local command="$commandRunnerPath $instance_arg $@ -output=$TempLog"
+    fi
+
+    log "COMMAND-RUNNER: $command"   # Logging the command being run
+
+    # Capturing command output and errors
+    local cmd_output
+    cmd_output=$(eval "$command" 2>&1) 
+    local status=$?
+
+    # Logging the command output
+    log "COMMAND-RUNNER output: $cmd_output"
+
+    if [ $status -ne 0 ]; then
+        log "Error executing command. Exit code: $status"  # Logging the error
+        exit $status
+    fi
+}
+
 # Work instances here
 function work_instance () {
     local instance="$1"
     source /p4/common/bin/p4_vars $instance
     file_path="$P4CCFG/p4_$instance.vars"
-    echo "Working instance labeled as: $instance"
+    log "Working instance labeled as: $instance"
     # Your processing logic for each instance goes here
     {
-        run_if_master.sh $instance $commandRunnerPath -output=$TempLog -instance=$instance
+        #OLD but good run_if_master.sh $instance $commandRunnerPath -output=$TempLog -instance=$instance
+        run_command-runner -instance=$instance
     }
 }
 
@@ -77,7 +117,7 @@ function work_instance () {
 # Instance Counter
 # Thanks to ttyler below
 function get_sdp_instances () {
-    echo "Finding p4d instances"
+    log "Finding p4d instances"
     SDPInstanceList=
     cd /p4 || bail "Could not cd to /p4."
     for e in *; do
@@ -89,11 +129,11 @@ function get_sdp_instances () {
     # Trim leading space.
     # shellcheck disable=SC2116
     SDPInstanceList=$(echo "$SDPInstanceList")
-    #echo "Instance List: $SDPInstanceList"
+
 
     # Count instances
     instance_count=$(echo "$SDPInstanceList" | wc -w)
-    #echo "Instances Names: $instance_count"
+
 
     # Loop through each instance and call the process_instance function
     for instance in $SDPInstanceList; do
@@ -105,19 +145,19 @@ function get_sdp_instances () {
 findP4D() {
     # Check if p4d is installed
     if ! command -v p4d >/dev/null; then
-        echo "p4d is not installed."
+        log "p4d is not installed."
         p4dInstalled=0
         return
     else
-        echo "p4d is installed."
+        log "p4d is installed."
         p4dInstalled=1
     fi
     # Function to check if a p4d process is running
     if pgrep -f "p4d_*" >/dev/null; then
-        echo "p4d service is running."
+        log "p4d service is running."
         p4dRunning=1
     else
-        echo "p4d service is not running."
+        log "p4d service is not running."
     fi
 }
 
@@ -187,6 +227,7 @@ metrics_passwd=$(grep metrics_passwd "$ConfigFile" | awk -F= '{print $2}')
 metrics_logfile=$(grep metrics_logfile "$ConfigFile" | awk -F= '{print $2}')
 report_instance_logfile=$(grep report_instance_logfile "$ConfigFile" | awk -F= '{print $2}')
 metrics_cloudtype=$(grep metrics_cloudtype "$ConfigFile" | awk -F= '{print $2}')
+
 # Set all thats not set to Unset
 metrics_host=${metrics_host:-Unset}
 metrics_customer=${metrics_customer:-Unset}
@@ -196,16 +237,17 @@ metrics_passwd=${metrics_passwd:-Unset}
 report_instance_logfile=${report_instance_logfile:-/p4/1/logs/report_instance_data.log}
 metrics_cloudtype=${metrics_cloudtype:-Unset}
 if [[ $metrics_host == Unset || $metrics_user == Unset || $metrics_passwd == Unset || $metrics_customer == Unset || $metrics_instance == Unset ]]; then
-    echo -e "\\nError: Required parameters not supplied.\\n"
-    echo "You must set the variables metrics_host, metrics_user, metrics_passwd, metrics_customer, metrics_instance in $ConfigFile."
+    msg "\\nError: Required parameters not supplied.\\n"
+    msg "You must set the variables metrics_host, metrics_user, metrics_passwd, metrics_customer, metrics_instance in $ConfigFile."
     exit 1
 fi
-echo autocloud is set to $autoCloud
+log autocloud is set to $autoCloud
+
 ## Auto set cloudtype in config?
 if [[ $metrics_cloudtype == Unset ]]; then
-    echo -e "No Instance Type Defined"
+    log "No Instance Type Defined"
     if [[ $autoCloud != 3 ]]; then
-        echo -e "using autoCloud"
+        log "using autoCloud"
         autoCloud=1
     fi
 fi
@@ -221,55 +263,55 @@ pushd $(dirname "$metrics_logfile")
 
 if [ $autoCloud -eq 1 ]; then
 {
-    echo "Using autoCloud"
+    msg "Using autoCloud"
     #==========================
     # Check if running on AZURE
-    echo "Checking for AZURE"
+    msg "Checking for AZURE"
     curl --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep -q "location"
     if [ $? -eq 0 ]; then
         curl --connect-timeout $autoCloudTimeout -s curl --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep "location"  | awk -F\" '{print $4}' >/dev/null
-        echo "You are on an AZURE machine."
+        log "You are on an AZURE machine."
         declare -i IsAzure=1
         upcfg "Azure"
     else
-        echo "You are not on an AZURE machine."
+        log "You are not on an AZURE machine."
         declare -i IsAzure=0
     fi
     #==========================
     # Check if running on AWS
-    echo "Checking for AWS"
+    log "Checking for AWS"
     #aws_region_check=$(curl --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep -q "region")
     curl --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep -q "region"
     if [ $? -eq 0 ]; then
         curl --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep "region"  | awk -F\" '{print $4}' >/dev/null
-        echo "You are on an AWS machine."
+        log "You are on an AWS machine."
         declare -i IsAWS=1
         upcfg "AWS"
     else
-        echo "You are not on an AWS machine."
+        log "You are not on an AWS machine."
         declare -i IsAWS=0
     fi
     #==========================
     # Check if running on GCP
-    echo "Checking for GCP"
+    log "Checking for GCP"
     curl --connect-timeout $autoCloudTimeout -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/?recursive=true" -s | grep -q "google"
     if [ $? -eq 0 ]; then
-        echo "You are on a GCP machine."
+        log "You are on a GCP machine."
         declare -i IsGCP=1
         upcfg "GCP"
     else
-        echo "You are not on a GCP machine."
+        log "You are not on a GCP machine."
         declare -i IsGCP=0
     fi
     }
     if [[ $IsAWS -eq 0 && $IsAzure -eq 0 && $IsGCP -eq 0 ]]; then
-        echo "No cloud detected setting to OnPrem"
+        log "No cloud detected setting to OnPrem"
         upcfg "OnPrem"
         declare -i IsOnPrem=1
     fi
 
     else {
-        echo "Not using autoCloud"
+        log "Not using autoCloud"
         declare -i IsAWS=0
         declare -i IsAzure=0
         declare -i IsGCP=0
@@ -279,51 +321,45 @@ fi
 
 
 if [[ $cloudtype == AZURE ]]; then
-    echo -e "Config says cloud type is: Azure"
+    log "Config says cloud type is: Azure"
     declare -i IsAzure=1
 fi
 if [[ $cloudtype == AWS ]]; then
-    echo -e "Config says cloud type is: AWS"
+    log "Config says cloud type is: AWS"
     declare -i IsAWS=1
 fi
 if [[ $cloudtype == GCP ]]; then
-    echo -e "Config says cloud type is: GCP"
+    log "Config says cloud type is: GCP"
     declare -i IsGCP=1
 fi
 if [[ $cloudtype == ONPREM ]]; then
-    echo -e "Config says cloud type is: OnPrem"
+    log "Config says cloud type is: OnPrem"
     declare -i IsOnPrem=1
 fi
 
 if [[ $IsAWS -eq 1 ]]; then
-    echo "Doing the AWS meta-pull"
-    #OLD $commandRunnerPath -output=$TempLog -yaml=$commandYamlPath -server -cloud=aws
-#    $commandRunnerPath -cloud=aws -output=$TempLog
-    $commandRunnerPath -server -cloud=aws -output=$TempLog
-#TEMP FIX?
-#    $commandRunnerPath -server -output=$TempLog
+    log "Doing the AWS meta-pull"
+    run_command-runner -server -cloud=aws
 fi
 
 if [[ $IsAzure -eq 1 ]]; then
-    echo "Doing the Azure meta-pull"
+    log "Doing the Azure meta-pull"
     # DO Azure command-runner stuff
-    # $commandRunnerPath -output=$TempLog -comyaml=$commandYamlPath -server -cloud=azure
+    run_command-runner -server -cloud=azure
 fi
 
 if [[ $IsGCP -eq 1 ]]; then
-    echo "Doing the GCP meta-pull"
+    log "Doing the GCP meta-pull"
     # DO GCP command-runner stuff
-    # $commandRunnerPath -output=$TempLog -comyaml=$commandYamlPath -server -cloud=gcp
+    run_command-runner -server -cloud=gcp
 fi
 
 if [[ $IsOnPrem -eq 1 ]]; then
-    echo "Doing the OnPrem stuff"
-    #OLD $commandRunnerPath -output=$TempLog -comyaml=$commandYamlPath -server
-    $commandRunnerPath -output=$TempLog -server
+    log "Doing the OnPrem stuff"
+    run_command-runner -server
 
 fi
 findP4D
-##OLD get_sdp_instances
 # If p4d is installed, then call the get_sdp_instances function
 if [[ $p4dInstalled -eq 1 ]]; then
     get_sdp_instances

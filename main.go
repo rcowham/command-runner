@@ -1,5 +1,10 @@
 /*
-TODO
+TODO IMPROVE LOGGING
+
+	logging levels like Info, Warn, Error, Debug etc., depending on the severity and significance of the message.
+	For instance, validation errors should probably be logged at the Error level, while less critical messages can be logged at Info or Warn.
+
+TODO KINGPIN
 */
 package main
 
@@ -57,6 +62,11 @@ func main() {
 	flag.BoolVar(&serverArg, "server", false, "Server argument for the command-runner")
 
 	flag.Parse()
+
+	// Validate the combine.yaml file
+	if err := schema.ValidateCombineYAML(schema.YamlCombineFilePath); err != nil {
+		logrus.Fatalf("Error validating combine.yaml: %v", err)
+	}
 
 	// Handle cloud providers
 	if cloudProvider != "" {

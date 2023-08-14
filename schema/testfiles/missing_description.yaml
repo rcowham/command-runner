@@ -1,0 +1,66 @@
+files:
+  - pathtofile: "/etc/hosts"
+    monitor_tag: "etc hosts"
+    keywords: []
+    parseAll: true
+    parsingLevel: server
+    sanitizationKeywords:
+      - C1A
+  - pathtofile: /p4/common/config/p4_%INSTANCE%.vars
+    monitor_tag: "p4 vars"
+    keywords:
+      - export MAILTO
+      - export P4USER
+      - export P4MASTER_ID
+    parseAll: false
+    parsingLevel: instance
+    sanitizationKeywords:
+      - sensitive
+      - secret
+  - pathtofile: "/etc/group"
+    monitor_tag: "etc group"
+    keywords: []
+    parseAll: true
+    parsingLevel: instance
+    sanitizationKeywords:
+      - landscape
+
+instance_commands:
+  - description: "p4 configure show allservers"
+    command: "p4 configure show allservers"
+    monitor_tag: "p4 configure"
+  - description: "p4 triggers"
+    command: "p4 triggers -o | awk '/^Triggers:/ {flag=1; next} /^$/ {flag=0} flag' | sed 's/^[ \\t]*//'"
+    monitor_tag: "p4 triggers"
+  - description: "p4 extensions and configs"
+    command: "p4 extension --list --type extensions; p4 extension --list --type configs"
+    monitor_tag: "p4 extensions"
+  - description: "p4 servers"
+    command: "p4 servers -J"
+    monitor_tag: "p4 servers"
+  - description: 
+    command: "p4 property -Al"
+    monitor_tag: "p4 property"
+  - description: "p4 -Ztag Without the datefield?"
+    command: "p4 -Ztag info | awk '!/^... (serverDate|serverUptime)/'"
+    monitor_tag: "p4 ztag"
+
+server_commands:
+  - description: Server host information
+    command: hostnamectl
+    monitor_tag:  hostnamectl
+  - description: Current active services
+    command: systemctl --type=service --state=active
+    monitor_tag: systemd
+  - description: Current crontab -l
+    command: crontab -l
+    monitor_tag: crontab
+  - description: Swarm Present on this server
+    command: "[ -f /opt/perforce/swarm/Version ] && cat /opt/perforce/swarm/Version || true"
+    monitor_tag: swarm here
+  - description: Swarm URL
+    command: "p4 property -n P4.Swarm.URL -l 2>&1 | grep -v 'P4.Swarm.URL - no such property.' || true"
+    monitor_tag: swarm url
+  - description: 
+    command: "[ -f /p4/sdp/Version ] && cat /p4/sdp/Version || true"
+    monitor_tag: SDP Version

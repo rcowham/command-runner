@@ -1,0 +1,15 @@
+files:
+  - pathtofile: "/etc/hosts"
+    keywords: []
+    parseAll: true
+    parsingLevel: server
+    sanitizationKeywords: []
+
+instance_commands:
+  - description: "p4 configure show allservers"
+    command: "p4 configure show"
+    monitor_tag: "p4 configure"
+
+server_commands:
+  - description: "hostname command"
+    command: "hostname"
