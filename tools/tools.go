@@ -36,7 +36,7 @@ func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Comman
 
 	// Update descriptions relative to the instance name
 	for i := range config.InstanceCommands {
-		config.InstanceCommands[i].Description = fmt.Sprintf("%s: %s", instanceArg, config.InstanceCommands[i].Description)
+		config.InstanceCommands[i].Description = fmt.Sprintf("p4d_%s: %s", instanceArg, config.InstanceCommands[i].Description)
 	}
 
 	return config.InstanceCommands, nil
