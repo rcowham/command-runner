@@ -1,11 +1,5 @@
 /*
-TODO IMPROVE LOGGING
-
-	logging levels like Info, Warn, Error, Debug etc., depending on the severity and significance of the message.
-	For instance, validation errors should probably be logged at the Error level, while less critical messages can be logged at Info or Warn.
-
-TODO KINGPIN
-*/
+ */
 package main
 
 import (
@@ -19,38 +13,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-/*
-var (
-	cloudProvider string
-	debug         bool
-)
-
-func init() {
-	flag.BoolVar(&debug, "debug", false, "Enable debug logging")
-	flag.StringVar(&schema.OutputJSONFilePath, "output", schema.DefaultOutputJSONPath, "Path to the output JSON file")
-	flag.StringVar(&cloudProvider, "cloud", "", "Cloud provider (aws, gcp, or azure)")
-
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
-	}
-
-	// Setup the logrus level
-	if debug {
-		logrus.SetLevel(logrus.DebugLevel)
-	} else {
-		logrus.SetLevel(logrus.InfoLevel)
-	}
-}
-*/
-
 var (
 	cloudProvider      = kingpin.Flag("cloud", "Cloud provider (aws, gcp, or azure)").String()
 	debug              = kingpin.Flag("debug", "Enable debug logging").Bool()
 	OutputJSONFilePath = kingpin.Flag("output", "Path to the output JSON file").Default(schema.DefaultOutputJSONPath).String()
 	instanceArg        = kingpin.Flag("instance", "Instance argument for the command-runner").String()
 	serverArg          = kingpin.Flag("server", "Server argument for the command-runner").Bool()
+	version            = "development"
 )
 
 func setupLogger(debug bool) {
@@ -62,6 +31,7 @@ func setupLogger(debug bool) {
 }
 
 func main() {
+	kingpin.Version(version)
 	kingpin.Parse()
 	// Check if any flags were provided
 	if !(*cloudProvider != "" || *debug || *OutputJSONFilePath != "" || *instanceArg != "" || *serverArg) {
