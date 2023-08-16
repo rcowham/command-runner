@@ -77,7 +77,7 @@ func GetAWSInstanceIdentityInfo(outputFilePath string) error {
 		Command:     "Metadata",
 		Description: "AWS Metadata",
 		Output:      EncodeToBase64(string(metadataOUT)),
-		MonitorTag:  "AWS",
+		MonitorTag:  "AWS metadata",
 	}
 
 	existingJSONData = append(existingJSONData, metadataJSON)
