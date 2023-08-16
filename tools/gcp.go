@@ -27,12 +27,12 @@ func GetGCPInstanceIdentityInfo(outputFilePath string) error {
 	if err != nil {
 		return err
 	}
+	// TODO MOVE THIS INTO LOGGING!
+	//fmt.Println("Sanitized Instance Identity Document:")
+	//fmt.Println(string(sanitizedDocument)) // Debug print to see the sanitized document content
 
-	fmt.Println("Sanitized Instance Identity Document:")
-	fmt.Println(string(sanitizedDocument)) // Debug print to see the sanitized document content
-
-	fmt.Println("Instance Identity Document Raw:")
-	fmt.Println(string(documentOUT)) // Debug print to see the raw documentOUT content
+	//fmt.Println("Instance Identity Document Raw:")
+	//fmt.Println(string(documentOUT)) // Debug print to see the raw documentOUT content
 
 	// Get the existing JSON data from the file
 	existingJSONData, err := ReadJSONFromFile(outputFilePath)
