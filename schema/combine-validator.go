@@ -14,6 +14,7 @@ func ValidateCombineYAML(filePath string) error {
 	// Read the YAML file
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		logrus.Errorf("Failed to read YAML file: %v", err)
 		return err
 	}
 
@@ -21,24 +22,29 @@ func ValidateCombineYAML(filePath string) error {
 	var config CombineConfig
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
+		logrus.Errorf("Error parsing YAML: %v", err)
 		return fmt.Errorf("error parsing YAML: %v", err)
 	}
 
 	// Validate commands and monitor tags
 	if err := validateInstanceCommands(config.InstanceCommands); err != nil {
+		logrus.Error(err)
 		return err
 	}
 
 	if err := validateServerCommands(config.ServerCommands); err != nil {
+		logrus.Error(err)
 		return err
 	}
 
 	if err := validateFileParser(config.Files); err != nil {
+		logrus.Error(err)
 		return err
 	}
 
 	// Validate parsing level
 	if err := EnsureParsingLevel(config); err != nil {
+		logrus.Error(err)
 		return err
 	}
 
@@ -56,13 +62,19 @@ func isEmpty(str string) bool {
 func validateInstanceCommands(commands []Command) error {
 	for _, cmd := range commands {
 		if isEmpty(cmd.Command) {
-			return fmt.Errorf("missing command for instance command: %s", cmd.Description)
+			err := fmt.Errorf("missing command for instance command: %s", cmd.Description)
+			logrus.Error(err)
+			return err
 		}
 		if isEmpty(cmd.MonitorTag) {
-			return fmt.Errorf("missing monitor_tag for instance command: %s", cmd.Description)
+			err := fmt.Errorf("missing monitor_tag for instance command: %s", cmd.Description)
+			logrus.Error(err)
+			return err
 		}
 		if isEmpty(cmd.Description) {
-			return fmt.Errorf("missing description for instance command: %s", cmd.Description)
+			err := fmt.Errorf("missing description for instance command: %s", cmd.Description)
+			logrus.Error(err)
+			return err
 		}
 	}
 	return nil
@@ -72,13 +84,19 @@ func validateInstanceCommands(commands []Command) error {
 func validateServerCommands(commands []Command) error {
 	for _, cmd := range commands {
 		if isEmpty(cmd.Command) {
-			return fmt.Errorf("missing command for server command: %s", cmd.Description)
+			err := fmt.Errorf("missing command for server command: %s", cmd.Description)
+			logrus.Error(err)
+			return err
 		}
 		if isEmpty(cmd.MonitorTag) {
-			return fmt.Errorf("missing monitor_tag for server command: %s", cmd.Description)
+			err := fmt.Errorf("missing monitor_tag for server command: %s", cmd.Description)
+			logrus.Error(err)
+			return err
 		}
 		if isEmpty(cmd.Description) {
-			return fmt.Errorf("missing description for server command: %s", cmd.Description)
+			err := fmt.Errorf("missing description for server command: %s", cmd.Description)
+			logrus.Error(err)
+			return err
 		}
 	}
 	return nil
@@ -88,22 +106,26 @@ func validateServerCommands(commands []Command) error {
 func validateFileParser(files []FileConfig) error {
 	for _, file := range files {
 		if isEmpty(file.MonitorTag) {
-			return fmt.Errorf("missing monitor_tag for file path: %s", file.PathToFile)
+			err := fmt.Errorf("missing monitor_tag for file path: %s", file.PathToFile)
+			logrus.Error(err)
+			return err
 		}
 		if file.PathToFile == "" {
-			return fmt.Errorf("missing pathtofile for file path: %s", file.PathToFile)
+			err := fmt.Errorf("missing pathtofile for file path: %s", file.PathToFile)
+			logrus.Error(err)
+			return err
 		}
-
-		// Check for parseAll and keywords conditions
 		if file.ParseAll && len(file.Keywords) > 0 {
 			logrus.Infof("Warning: For file %s, parseAll is set to true, but keywords are provided. Keywords will be ignored.", file.PathToFile)
 		} else if !file.ParseAll && len(file.Keywords) == 0 {
-			return fmt.Errorf("for file %s: parseAll is set to false, but no keywords are provided", file.PathToFile)
+			err := fmt.Errorf("for file %s: parseAll is set to false, but no keywords are provided", file.PathToFile)
+			logrus.Error(err)
+			return err
 		}
-
-		// Check for valid parsingLevel
 		if file.ParsingLevel != "server" && file.ParsingLevel != "instance" {
-			return fmt.Errorf("invalid parsingLevel '%s' for file path: %s. Expecting 'server' or 'instance'", file.ParsingLevel, file.PathToFile)
+			err := fmt.Errorf("invalid parsingLevel '%s' for file path: %s. Expecting 'server' or 'instance'", file.ParsingLevel, file.PathToFile)
+			logrus.Error(err)
+			return err
 		}
 	}
 	return nil
@@ -111,11 +133,14 @@ func validateFileParser(files []FileConfig) error {
 func EnsureParsingLevel(config CombineConfig) error {
 	for _, file := range config.Files {
 		if file.ParsingLevel == "" {
-			return fmt.Errorf("missing parsingLevel for file path: %s", file.PathToFile)
+			err := fmt.Errorf("missing parsingLevel for file path: %s", file.PathToFile)
+			logrus.Error(err)
+			return err
 		} else if file.ParsingLevel != "server" && file.ParsingLevel != "instance" {
-			return fmt.Errorf("invalid parsingLevel for file path %s: %s", file.PathToFile, file.ParsingLevel)
+			err := fmt.Errorf("invalid parsingLevel for file path %s: %s", file.PathToFile, file.ParsingLevel)
+			logrus.Error(err)
+			return err
 		}
 	}
-
 	return nil
 }
