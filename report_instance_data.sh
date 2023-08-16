@@ -58,6 +58,7 @@ function msg () { echo -e "$*"; }
 function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$report_instance_logfile"; msg "$dt: $*"; }
 function bail () { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
 #function upcfg () { msg "metrics_cloudtype=$1" >> "$ConfigFile"; } #TODO This could be way more elegant IE error checking the config file but it works
+
 upcfg() {
     local metrics_cloudtype="$1"
 
@@ -71,17 +72,16 @@ upcfg() {
     fi
 }
 
-
 #run command-runner run!
 run_command-runner() {
     local instance_arg="$1"
     shift
 
-    if [[ "$instance_arg" == "-instance="* ]]; then
-        local instance_value=${instance_arg#-instance=}
-        local command="run_if_master.sh $instance_value $commandRunnerPath $@ -output=$TempLog $instance_arg"
+    if [[ "$instance_arg" == "--instance="* ]]; then
+        local instance_value=${instance_arg#--instance=}
+        local command="run_if_master.sh $instance_value $commandRunnerPath $@ --output=$TempLog $instance_arg"
     else
-        local command="$commandRunnerPath $instance_arg $@ -output=$TempLog"
+        local command="$commandRunnerPath $instance_arg $@ --output=$TempLog"
     fi
 
     log "COMMAND-RUNNER: $command"   # Logging the command being run
@@ -92,8 +92,10 @@ run_command-runner() {
     local status=$?
 
     # Logging the command output
-    log "COMMAND-RUNNER output: $cmd_output"
-
+    log "  - COMMAND-RUNNER output: $cmd_output"
+    while IFS= read -r line; do
+        log "    $line"
+    done <<< "$cmd_output"
     if [ $status -ne 0 ]; then
         log "Error executing command. Exit code: $status"  # Logging the error
         exit $status
@@ -108,7 +110,7 @@ function work_instance () {
     log "Working instance labeled as: $instance"
     # Your processing logic for each instance goes here
     {
-        run_command-runner -instance=$instance
+        run_command-runner --instance=$instance
     }
 }
 
@@ -334,24 +336,24 @@ fi
 
 if [[ $IsAWS -eq 1 ]]; then
     log "Doing the AWS meta-pull"
-    run_command-runner -server -cloud=aws
+    run_command-runner --server --cloud=aws
 fi
 
 if [[ $IsAzure -eq 1 ]]; then
     log "Doing the Azure meta-pull"
     # DO Azure command-runner stuff
-    run_command-runner -server -cloud=azure
+    run_command-runner --server --cloud=azure
 fi
 
 if [[ $IsGCP -eq 1 ]]; then
     log "Doing the GCP meta-pull"
     # DO GCP command-runner stuff
-    run_command-runner -server -cloud=gcp
+    run_command-runner --server --cloud=gcp
 fi
 
 if [[ $IsOnPrem -eq 1 ]]; then
     log "Doing the OnPrem stuff"
-    run_command-runner -server
+    run_command-runner --server
 
 fi
 

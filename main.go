@@ -11,14 +11,15 @@ package main
 import (
 	"command-runner/schema"
 	"command-runner/tools"
-	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/alecthomas/kingpin/v2"
 
 	"github.com/sirupsen/logrus"
 )
 
+/*
 var (
 	cloudProvider string
 	debug         bool
@@ -42,12 +43,39 @@ func init() {
 		logrus.SetLevel(logrus.InfoLevel)
 	}
 }
+*/
+
+var (
+	cloudProvider      = kingpin.Flag("cloud", "Cloud provider (aws, gcp, or azure)").String()
+	debug              = kingpin.Flag("debug", "Enable debug logging").Bool()
+	OutputJSONFilePath = kingpin.Flag("output", "Path to the output JSON file").Default(schema.DefaultOutputJSONPath).String()
+	instanceArg        = kingpin.Flag("instance", "Instance argument for the command-runner").String()
+	serverArg          = kingpin.Flag("server", "Server argument for the command-runner").Bool()
+)
+
+func setupLogger(debug bool) {
+	if debug {
+		logrus.SetLevel(logrus.DebugLevel)
+	} else {
+		logrus.SetLevel(logrus.InfoLevel)
+	}
+}
 
 func main() {
+	kingpin.Parse()
+	// Check if any flags were provided
+	if !(*cloudProvider != "" || *debug || *OutputJSONFilePath != "" || *instanceArg != "" || *serverArg) {
+		kingpin.Usage()
+		return
+	}
+	// Setting up the logger
+	setupLogger(*debug)
+
 	// Determine the directory of the command-runner executable
 	exePath, err := os.Executable()
+	logrus.Debugf("Executable directory: %s", exePath)
 	if err != nil {
-		logrus.Errorf("Error getting executable path: %v", err)
+		logrus.Error("Error getting executable path:", err)
 		os.Exit(1)
 	}
 	exeDir := filepath.Dir(exePath)
@@ -55,48 +83,45 @@ func main() {
 	// Construct the path for combine.yaml
 	schema.YamlCombineFilePath = filepath.Join(exeDir, schema.DefaultCombineYAMLPath)
 
-	var instanceArg string
-	var serverArg bool
-
-	flag.StringVar(&instanceArg, "instance", "", "Instance argument for the command-runner")
-	flag.BoolVar(&serverArg, "server", false, "Server argument for the command-runner")
-
-	flag.Parse()
-
 	// Validate the combine.yaml file
 	if err := schema.ValidateCombineYAML(schema.YamlCombineFilePath); err != nil {
-		logrus.Fatalf("Error validating combine.yaml: %v", err)
+		logrus.Fatal("Error validating combine.yaml:", err)
 	}
 
 	// Handle cloud providers
-	if cloudProvider != "" {
-		switch cloudProvider {
+	if *cloudProvider != "" {
+		logrus.Infof("Cloud provider: %s", *cloudProvider)
+		switch *cloudProvider {
 		case "aws":
-			err := tools.GetAWSInstanceIdentityInfo(schema.OutputJSONFilePath)
+			err := tools.GetAWSInstanceIdentityInfo(*OutputJSONFilePath)
 			if err != nil {
-				logrus.Errorf("Error getting AWS instance identity info: %v", err)
+				logrus.Error("Error getting AWS instance identity info:", err)
 				os.Exit(1)
 			}
 		case "gcp":
-			err := tools.GetGCPInstanceIdentityInfo(schema.OutputJSONFilePath)
+			err := tools.GetGCPInstanceIdentityInfo(*OutputJSONFilePath)
 			if err != nil {
-				logrus.Errorf("Error getting GCP instance identity info: %v", err)
+				logrus.Error("Error getting GCP instance identity info:", err)
 				os.Exit(1)
 			}
 		case "azure":
 			// Add Azure handling logic here
+			logrus.Warn("Azure cloud provider not yet implemented.")
+			os.Exit(1)
 		default:
-			logrus.Errorf("Error: Invalid cloud provider. Please specify aws, gcp, or azure.")
+			logrus.Error("Invalid cloud provider. Please specify aws, gcp, or azure.")
 			os.Exit(1)
 		}
 	}
 
 	// Handle server commands and file parsing
-	if serverArg {
+	if *serverArg {
+		logrus.Info("Executing server commands...")
 		// Replace ReadServerCommandsFromYAML with a new function that gets server commands from combine.yaml
 		serverCommands, err := tools.ReadServerCommandsFromYAML(schema.YamlCombineFilePath)
+		logrus.Debug("Parsed server commands: ", serverCommands)
 		if err != nil {
-			logrus.Errorf("Error reading server commands from combine YAML: %v", err)
+			logrus.Fatalf("Error reading server commands from combine YAML: %v", err)
 			os.Exit(1)
 		}
 
@@ -146,9 +171,12 @@ func main() {
 	}
 
 	// Handle instance commands and file parsing
-	if instanceArg != "" {
+	if *instanceArg != "" {
+		logrus.Infof("Executing commands for instance: %s", *instanceArg)
 		// Replace ReadInstanceCommandsFromYAML with a new function that gets instance commands from combine.yaml
-		instanceCommands, err := tools.ReadInstanceCommandsFromYAML(schema.YamlCombineFilePath, instanceArg)
+		//OLD		instanceCommands, err := tools.ReadInstanceCommandsFromYAML(schema.YamlCombineFilePath, instanceArg)
+		instanceCommands, err := tools.ReadInstanceCommandsFromYAML(schema.YamlCombineFilePath, *instanceArg)
+		logrus.Debug("Parsed instance commands: ", instanceCommands)
 		if err != nil {
 			logrus.Errorf("Error reading instance commands from combine YAML: %v", err)
 			os.Exit(1)
@@ -187,16 +215,12 @@ func main() {
 			os.Exit(1)
 		}
 		// For file parsing at the instance level
-		err = tools.FileParserFromYAMLConfigInstance(schema.YamlCombineFilePath, schema.OutputJSONFilePath, instanceArg)
+		err = tools.FileParserFromYAMLConfigInstance(schema.YamlCombineFilePath, schema.OutputJSONFilePath, *instanceArg)
 		if err != nil {
 			logrus.Errorf("Error parsing files at the instance level: %v", err)
 			os.Exit(1)
 		}
 		logrus.Infof("Instance commands executed and output appended to %s.", schema.OutputJSONFilePath)
 	}
-
-	if flag.NFlag() == 0 {
-		flag.Usage()
-	}
-
+	logrus.Info("Command-runner completed.")
 }

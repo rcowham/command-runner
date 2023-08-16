@@ -25,6 +25,7 @@ func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath st
 			}
 		}
 	}
+	logrus.Info("Successfully parsed and appended data at server level")
 
 	return nil
 }
@@ -77,6 +78,7 @@ func parseContent(filePath string, fileConfig schema.FileConfig) (string, error)
 
 	// If ParseAll is true, return the full content (but still sanitize if needed)
 	if fileConfig.ParseAll {
+		logrus.Infof("Parsing entire content of file: %q", filePath)
 		return sanitizeOutput(content, fileConfig.SanitizationKeywords), nil
 	}
 
@@ -90,6 +92,7 @@ func parseContent(filePath string, fileConfig schema.FileConfig) (string, error)
 			}
 		}
 	}
+	logrus.Infof("Parsed content from file: %q based on provided keywords", filePath)
 
 	return sanitizeOutput(strings.Join(outputLines, "\n"), fileConfig.SanitizationKeywords), nil
 }
@@ -137,5 +140,7 @@ func appendParsedData(filePath string, parsedContent string, fileConfig schema.F
 		Output:      EncodeToBase64(sanitizedOutput),
 		MonitorTag:  fileConfig.MonitorTag,
 	}
+
 	return AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath)
+
 }

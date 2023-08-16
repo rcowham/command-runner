@@ -10,10 +10,9 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
-
-// TODO The description for each instance should be relative to their repective instance name when running specific instance commands
 
 type JSONData struct {
 	Command     string `json:"command"`
@@ -24,13 +23,16 @@ type JSONData struct {
 
 // Function to read instance_commands from the YAML file
 func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
+	logrus.Debug("Reading instance commands from YAML...")
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		logrus.Error("Failed to read the YAML file:", err)
 		return nil, err
 	}
 
 	var config schema.CommandConfig
 	if err := yaml.Unmarshal(yamlFile, &config); err != nil {
+		logrus.Error("Failed to unmarshal YAML:", err)
 		return nil, err
 	}
 
@@ -39,11 +41,13 @@ func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Comman
 		config.InstanceCommands[i].Description = fmt.Sprintf("p4d_%s: %s", instanceArg, config.InstanceCommands[i].Description)
 	}
 
+	logrus.Info("Successfully read instance commands from YAML.")
 	return config.InstanceCommands, nil
 }
 
 // Function to read server_commands from the YAML file
 func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
+	logrus.Debug("Reading server commands from YAML...")
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -51,22 +55,27 @@ func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
 
 	var config schema.CommandConfig
 	if err := yaml.Unmarshal(yamlFile, &config); err != nil {
+		logrus.Error("Failed to unmarshal YAML:", err)
 		return nil, err
 	}
 
+	logrus.Info("Successfully read server commands from YAML.")
 	return config.ServerCommands, nil
 }
 func ReadCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
+	logrus.Debug("Reading commands from YAML...")
 	commands := make([]schema.Command, 0)
 
 	instanceCommands, err := ReadInstanceCommandsFromYAML(filePath, instanceArg)
 	if err != nil {
+		logrus.Errorf("Error reading instance commands: %s", err)
 		return nil, err
 	}
 	commands = append(commands, instanceCommands...)
 
 	serverCommands, err := ReadServerCommandsFromYAML(filePath)
 	if err != nil {
+		logrus.Errorf("Error reading server commands: %s", err)
 		return nil, err
 	}
 	commands = append(commands, serverCommands...)
@@ -75,6 +84,7 @@ func ReadCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error
 }
 
 func ExecuteShellCommand(command string) (string, string, error) {
+	logrus.Debugf("Executing shell command: %s", command)
 	cmd := exec.Command("sh", "-c", command)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -82,6 +92,7 @@ func ExecuteShellCommand(command string) (string, string, error) {
 
 	err := cmd.Run()
 	if err != nil {
+		logrus.Errorf("Failed to execute command %s: %s", command, err)
 		return stdout.String(), stderr.String(), err
 	}
 
@@ -93,8 +104,10 @@ func ExecuteAndEncodeCommands(commands []schema.Command) ([]string, error) {
 	var base64Outputs []string
 
 	for _, cmd := range commands {
+		logrus.Debugf("Encoding command: %s", cmd.Command)
 		output, _, err := ExecuteShellCommand(cmd.Command)
 		if err != nil {
+			logrus.Errorf("Error executing and encoding command %s: %s", cmd.Command, err)
 			return nil, err
 		}
 		base64Output := EncodeToBase64(output)
@@ -110,8 +123,10 @@ func EncodeToBase64(input string) string {
 
 // Function to write JSON data to a file with indentation for human-readability
 func WriteJSONToFile(data []JSONData, filePath string) error {
+	logrus.Debugf("Writing JSON data to file: %s", filePath)
 	jsonString, err := json.MarshalIndent(data, "", "    ") // Use four spaces for indentation
 	if err != nil {
+		logrus.Errorf("Failed to marshal JSON data: %s", err)
 		return err
 	}
 
@@ -120,6 +135,7 @@ func WriteJSONToFile(data []JSONData, filePath string) error {
 		// Create the file if it doesn't exist
 		file, err := os.Create(filePath)
 		if err != nil {
+			logrus.Errorf("Failed to create file %s: %s", filePath, err)
 			return err
 		}
 		defer file.Close()
@@ -129,8 +145,10 @@ func WriteJSONToFile(data []JSONData, filePath string) error {
 }
 
 func ReadJSONFromFile(filePath string) ([]JSONData, error) {
+	logrus.Debugf("Reading JSON data from file: %s", filePath)
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
+		logrus.Errorf("Failed to open file %s: %s", filePath, err)
 		return nil, err
 	}
 	defer jsonFile.Close()
@@ -138,6 +156,7 @@ func ReadJSONFromFile(filePath string) ([]JSONData, error) {
 	var jsonData []JSONData
 	dec := json.NewDecoder(jsonFile)
 	if err := dec.Decode(&jsonData); err != nil {
+		logrus.Errorf("Failed to decode JSON data from file %s: %s", filePath, err)
 		return nil, err
 	}
 
@@ -145,9 +164,11 @@ func ReadJSONFromFile(filePath string) ([]JSONData, error) {
 }
 
 func AppendParsedDataToFile(parsedData []JSONData, filePath string) error {
+	logrus.Debugf("Appending parsed data to file: %s", filePath)
 	// Get the existing JSON data from the file (if it exists)
 	existingJSONData, err := ReadJSONFromFile(filePath)
 	if err != nil && !os.IsNotExist(err) {
+		logrus.Errorf("Error reading existing JSON data from %s: %s", filePath, err)
 		return fmt.Errorf("error reading existing JSON data from %s: %s", filePath, err)
 	}
 
@@ -156,6 +177,7 @@ func AppendParsedDataToFile(parsedData []JSONData, filePath string) error {
 
 	// Write the updated JSON data back to the file
 	if err := WriteJSONToFile(allJSONData, filePath); err != nil {
+		logrus.Errorf("Error appending parsed data to file %s: %s", filePath, err)
 		return fmt.Errorf("error writing JSON data to %s: %s", filePath, err)
 	}
 

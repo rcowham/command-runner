@@ -13,11 +13,13 @@ import (
 
 // GetAWSToken retrieves the AWS metadata token.
 func GetAWSToken() (string, error) {
+	logrus.Info("Fetching AWS metadata token...")
 	autoCloudTimeout := 5 * time.Second
 
 	tokenURL := "http://169.254.169.254/latest/api/token"
 	req, err := http.NewRequest("PUT", tokenURL, nil)
 	if err != nil {
+		logrus.Errorf("Failed to create request for AWS token: %s", err)
 		return "", err
 	}
 	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", "21600")
@@ -29,9 +31,10 @@ func GetAWSToken() (string, error) {
 	defer resp.Body.Close()
 	token, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		logrus.Errorf("Failed to fetch AWS metadata token: %s", err)
 		return "", err
 	}
-
+	logrus.Info("Successfully fetched AWS metadata token.")
 	return string(token), nil
 }
 
@@ -94,6 +97,7 @@ func getAWSEndpoint(token, url string) ([]byte, error) {
 	// Clean the URL to remove unwanted characters
 	url = strings.TrimSpace(url)
 
+	logrus.Debugf("Fetching data from AWS endpoint: %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -102,15 +106,17 @@ func getAWSEndpoint(token, url string) ([]byte, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		logrus.Errorf("Failed to create request for AWS endpoint %s: %s", url, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		logrus.Errorf("Failed to fetch data from AWS endpoint %s: %s", url, err)
 		return nil, err
 	}
-
+	logrus.Debugf("Received response from AWS endpoint %s with status: %s", url, resp.Status)
 	if resp.StatusCode == http.StatusNotFound {
 		// If the response is 404, return the content as is without treating it as an error
 		return body, nil
