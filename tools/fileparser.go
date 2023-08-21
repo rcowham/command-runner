@@ -10,6 +10,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// FileParserFromYAMLConfigServer reads a YAML configuration, parses the specified files at server level, and appends the
+// results to the output JSON file.
+// Returns an error if any issues arise during the parsing process.
 func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
@@ -17,39 +20,54 @@ func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath st
 		return fmt.Errorf("error reading YAML config: %w", err)
 	}
 
+	var hadError bool
 	for _, file := range config.Files {
 		filePath := file.PathToFile
 		if file.ParsingLevel == "server" {
 			if err := parseAndAppendAtServerLevel(filePath, file, outputJSONFilePath); err != nil {
-				return err
+				logrus.Errorf("error parsing file %s: %v", filePath, err)
+				hadError = true
+				// don't return, continue with the next file
 			}
 		}
 	}
+	if hadError {
+		return fmt.Errorf("encountered errors while parsing some files")
+	}
 	logrus.Info("Successfully parsed and appended data at server level")
-
 	return nil
 }
 
+// FileParserFromYAMLConfigInstance reads a YAML configuration, parses the specified files at instance level
+// (replacing the instance placeholder in the file path with the provided instance name) and appends the results
+// to the output file.
+// Returns an error if any issues arise during the parsing process.
 func FileParserFromYAMLConfigInstance(configFilePath, outputFilePath, instance string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
-
 		return fmt.Errorf("error reading YAML config: %w", err)
 	}
 
+	var hadError bool
 	for _, file := range config.Files {
 		filePath := file.PathToFile
 		if file.ParsingLevel == "instance" {
 			filePath = strings.Replace(filePath, "%INSTANCE%", instance, 1)
 			if err := parseAndAppendAtInstanceLevel(filePath, file, outputFilePath, instance); err != nil {
-				return err
+				logrus.Errorf("error parsing file %s: %v", filePath, err)
+				hadError = true
+				// don't return, continue with the next file
 			}
 		}
 	}
-
+	if hadError {
+		return fmt.Errorf("encountered errors while parsing some files")
+	}
 	return nil
 }
 
+// parseAndAppendAtServerLevel is an internal function that takes in a filePath, its configuration and an output path.
+// It parses the content based on the configuration and appends the result to the output file.
 func parseAndAppendAtServerLevel(filePath string, fileConfig schema.FileConfig, outputFilePath string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
@@ -59,6 +77,7 @@ func parseAndAppendAtServerLevel(filePath string, fileConfig schema.FileConfig, 
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
+// parseAndAppendAtInstanceLevel is similar to parseAndAppendAtServerLevel, but it's specifically for parsing at the instance level.
 func parseAndAppendAtInstanceLevel(filePath string, fileConfig schema.FileConfig, outputFilePath, instanceArg string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
@@ -68,6 +87,8 @@ func parseAndAppendAtInstanceLevel(filePath string, fileConfig schema.FileConfig
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
+// parseContent is an internal function that reads the content from a file based on the provided configuration.
+// It looks for specific keywords to parse the content or returns the entire content if ParseAll is true.
 func parseContent(filePath string, fileConfig schema.FileConfig) (string, error) {
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -96,6 +117,8 @@ func parseContent(filePath string, fileConfig schema.FileConfig) (string, error)
 
 	return sanitizeOutput(strings.Join(outputLines, "\n"), fileConfig.SanitizationKeywords), nil
 }
+
+// sanitizeOutput removes lines containing any of the provided sanitization keywords from the output.
 func sanitizeOutput(output string, sanitizationKeywords []string) string {
 	var sanitizedOutputLines []string
 	lines := strings.Split(output, "\n")
@@ -114,6 +137,7 @@ func sanitizeOutput(output string, sanitizationKeywords []string) string {
 	return strings.Join(sanitizedOutputLines, "\n")
 }
 
+// readYAMLConfig is an internal function to read and unmarshal the YAML configuration from a given file path.
 func readYAMLConfig(configFilePath string) (*schema.FileParserConfig, error) {
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
@@ -130,6 +154,7 @@ func readYAMLConfig(configFilePath string) (*schema.FileParserConfig, error) {
 	return &config, nil
 }
 
+// appendParsedData takes the parsed content and appends it in a structured format to the provided output file.
 func appendParsedData(filePath string, parsedContent string, fileConfig schema.FileConfig, outputFilePath string) error {
 	// Now sanitize the parsed content
 	sanitizedOutput := sanitizeOutput(parsedContent, fileConfig.SanitizationKeywords)

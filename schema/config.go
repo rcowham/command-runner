@@ -2,6 +2,10 @@ package schema
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Define default paths
@@ -15,6 +19,17 @@ var (
 	YamlCombineFilePath = DefaultCombineYAMLPath
 )
 
+func GetExecutableDir() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		logrus.Fatal("Error getting executable path:", err)
+	}
+	return filepath.Dir(exePath)
+}
+
+func GetConfigPath(basePath, configName string) string {
+	return filepath.Join(basePath, configName)
+}
 func (fc *FileConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var raw interface{}
 	if err := unmarshal(&raw); err != nil {

@@ -1,4 +1,4 @@
-// gcp.go
+// gcp_commands.go
 //
 
 package tools
@@ -18,20 +18,19 @@ import (
 
 // GetGCPInstanceIdentityInfo retrieves the instance identity document and tags from the AWS metadata service.
 func GetGCPInstanceIdentityInfo(outputFilePath string) error {
-	//Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/?recursive=true
 	documentURL := "http://metadata.google.internal/computeMetadata/v1/instance/?recursive=true"
 	documentOUT, err := getGCPEndpoint(documentURL)
 	logrus.Info("Fetching GCP instance identity document...")
 
 	if err != nil {
 		logrus.Errorf("Failed to fetch GCP instance identity document: %s", err)
-		return err
+		return saveErrorToJSON(outputFilePath, "Instance Identity Document", err.Error(), "GCP")
 	}
 	// Sanitize sensitive information from documentOUT
 	sanitizedDocument, err := sanitizeGCPInstanceDocument(documentOUT)
 	if err != nil {
 		logrus.Errorf("Failed to sanitize GCP instance identity document: %s", err)
-		return err
+		return saveErrorToJSON(outputFilePath, "Instance Identity Document Sanitization", err.Error(), "GCP")
 	}
 
 	// Get the existing JSON data from the file
