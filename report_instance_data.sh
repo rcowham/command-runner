@@ -5,7 +5,7 @@ echo "Command Runner Path: $commandRunnerPath"
 TempLog="/tmp/out.json"
 rm -f $TempLog
 # report_instance_data.sh
-#
+# 
 # Collects basic instance metadata about a customer environment (for AWS and Azure and ultimately other cloud envs)
 #
 # If used, put this job into perforce user crontab:
@@ -21,6 +21,8 @@ rm -f $TempLog
 #
 #TODO Better logging
 #TODO NEEDS AZURE testing
+#
+# THIS IS A TEST MESSAGE
 # ============================================================
 # Configuration section
 # Find out if we're in AWS, GCP, or AZURE..

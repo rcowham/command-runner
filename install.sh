@@ -98,7 +98,7 @@ chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
 
 # Call the setup_config.sh script
 echo "Setting up configuration with setup_config.sh..."
-bash "$LOCAL_REPO_PATH/setup_config.sh"
+bash -i "$LOCAL_REPO_PATH/setup_config.sh"
 
 
 # Setup cron jobs
