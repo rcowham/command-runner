@@ -50,10 +50,17 @@ install_utility() {
             exit 1
         fi
 
-        command -v $utility &> /dev/null || {
+        if [ "$utility" == "golang" ]; then
+            command -v go &> /dev/null || {
+            echo "Go is not installed. Exiting..."
+            exit 1
+        }
+        else
+            command -v $utility &> /dev/null || {
             echo "Failed to install $utility. Exiting..."
             exit 1
         }
+        fi
     fi
 }
 install_golang() {
@@ -75,7 +82,8 @@ install_utility git
 install_utility curl
 install_utility jq
 install_utility make
-install_golang #Currently always installing go #TODO FIX THIS
+# install_golang #Currently always installing go #TODO FIX THIS
+install_utility golang
 
 # Clone and compile
 [ ! -d "$LOCAL_REPO_PATH" ] && git clone "$REPO_URL" "$LOCAL_REPO_PATH"
