@@ -15,19 +15,24 @@ fi
 
 # If the default directory exists, but the file doesn't
 if [ -d "$DEFAULT_DIR" ]; then
-    read -p "$DEFAULT_DIR exists but $DEFAULT_CFG_FILE does not. Would you like to use this directory? [y/N]: " use_default
-    if [[ "$use_default" =~ ^[Yy]$ ]]; then
+    read -p "$DEFAULT_DIR exists but $DEFAULT_CFG_FILE does not. Would you like to use this directory? [Y/n]: " use_default
+    
+    # If user presses Enter without giving an input or provides 'Y'/'y', use the default path
+    if [[ -z "$use_default" || "$use_default" =~ ^[Yy]$ ]]; then
         TARGET_CFG_PATH="$DEFAULT_CFG_PATH"
     else
-        read -p "Please specify the full path to the directory where you'd like to create the config file: " custom_dir
+        read -p "Full path to $DEFAULT_CFG_FILE config file: [default: $DEFAULT_CFG_PATH]:" custom_dir
         TARGET_CFG_PATH="$custom_dir/$DEFAULT_CFG_FILE"
         CONFIG_CHANGED=1
     fi
 else
-    read -p "$DEFAULT_DIR does not exist. Please specify the full path to the directory where you'd like to create the config file: " custom_dir
-    TARGET_CFG_PATH="$custom_dir/$DEFAULT_CFG_FILE"
+    read -p "$DEFAULT_DIR does not exist. Full path to $DEFAULT_CFG_FILE config file: [default: $DEFAULT_CFG_PATH]:" custom_dir
+    if [[ -z "$custom_dir" ]]; then
+        TARGET_CFG_PATH="$DEFAULT_CFG_PATH"  # Use default if no input provided
+    else
+        TARGET_CFG_PATH="$custom_dir/$DEFAULT_CFG_FILE"
+    fi
     CONFIG_CHANGED=1
-
 fi
 
 # Create configuration based on user input

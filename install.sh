@@ -59,9 +59,13 @@ install_utility() {
 install_golang() {
     if ! command -v go &> /dev/null; then
         echo "Go (golang) not found, installing..."
+        # Change to /tmp directory
+        pushd /tmp > /dev/null
         wget https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz
         tar -xvf go$GO_VERSION.linux-amd64.tar.gz
         mv go /usr/local
+        # Return to the original directory
+        popd > /dev/null
         echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile
         source /etc/profile
     fi
@@ -93,11 +97,8 @@ chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report
 chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
 
 # Call the setup_config.sh script
-echo "Setting up configuration..."
-bash "$LOCAL_REPO_PATH/setup_config.sh" || {
-    echo "Failed to set up configuration. Exiting..."
-    exit 1
-}
+echo "Setting up configuration with setup_config.sh..."
+bash "$LOCAL_REPO_PATH/setup_config.sh"
 
 
 # Setup cron jobs
