@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Script Name: check_for_runner-updates.sh 
+# Script Name: check_for_runner-updates.sh
 # Purpose: Check for updates in a GitHub repository and sync the local copy
 
 # Configuration
 github_repo_url="https://github.com/willKman718/command-runner.git"
 github_api_url="https://api.github.com/repos/willKman718/command-runner/commits?per_page=1"
-local_repo_path="/opt/perforce/command-runner" 
+local_repo_path="/opt/perforce/command-runner"
 ConfigFile=".update_config"
 
 function msg() { echo -e "$*"; }
@@ -38,8 +38,21 @@ fi
 
 github_sha=$(curl -s "$github_api_url" | jq -r '.[] | .sha')
 
+# Check if check_for_runner-updates.sh is untracked and if so, move it to /tmp
+if git ls-files --others --exclude-standard | grep -q "check_for_runner-updates.sh"; then
+    mv check_for_runner-updates.sh "/tmp/check_for_runner-updates_$(date +%Y%m%d%H%M%S).sh"
+    echo "Moved local untracked check_for_runner-updates.sh to /tmp."
+fi
+
 if [[ "$last_github_sha" != "$github_sha" ]]; then
     msg "Updating project"
+
+    # Backup the current report_instance_data.sh
+    cp report_instance_data.sh report_instance_data.sh.bak
+
+    # Stash any local changes to allow the git pull to work without conflicts
+    git stash
+
     git pull origin master || bail "Failed to pull updates from repository."
 
     if [ -f Makefile ]; then
@@ -47,6 +60,19 @@ if [[ "$last_github_sha" != "$github_sha" ]]; then
     else
         msg "Makefile not found. Compilation skipped."
     fi
+
+# Extract the entire lines from the backup script
+old_config_line=$(grep 'ConfigFile=' report_instance_data.sh.bak | head -n 1)
+old_log_line=$(grep 'declare report_instance_logfile=' report_instance_data.sh.bak | head -n 1)
+
+# Replace the lines in the new script
+sed -i "s#ConfigFile=.*#$old_config_line#" report_instance_data.sh
+sed -i "s#declare report_instance_logfile=.*#$old_log_line#" report_instance_data.sh
+
+
+    # Ensure the scripts are executable
+    chmod +x check_for_runner-updates.sh
+    chmod +x report_instance_data.sh
 
     echo "last_github_sha=$github_sha" > "$ConfigFile"
     msg "Project updated"
