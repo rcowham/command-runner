@@ -85,6 +85,21 @@ cd "$LOCAL_REPO_PATH" && {
 chown -R $USER_NAME:$USER_NAME "$LOCAL_REPO_PATH"
 chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh"
 
+
+
+# Set permissions
+chown -R $USER_NAME:$USER_NAME "$LOCAL_REPO_PATH"
+chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh"
+chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
+
+# Call the setup_config.sh script
+echo "Setting up configuration..."
+bash "$LOCAL_REPO_PATH/setup_config.sh" || {
+    echo "Failed to set up configuration. Exiting..."
+    exit 1
+}
+
+
 # Setup cron jobs
 CRON_JOB_CONTENT="# Command-Runner check for updates and report instance data
 0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> /var/log/command-runner.log 2>&1
