@@ -40,7 +40,10 @@ echo "Setting up configuration in $TARGET_CFG_PATH..."
 
 read -p "Enter metrics host (e.g., http://some.ip.or.host:9091): " metrics_host
 read -p "Enter metrics customer (e.g., Customer-Name): " metrics_customer
-read -p "Enter metrics instance (e.g., server-name): " metrics_instance
+read -p "Enter metrics instance (default is hostname: $(hostname)): " metrics_instance
+if [ -z "$metrics_instance" ]; then
+    metrics_instance=$(hostname)
+fi
 read -p "Enter metrics user (e.g., username-for-pushgateway): " metrics_user
 read -s -p "Enter metrics password: " metrics_passwd
 echo

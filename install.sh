@@ -147,4 +147,6 @@ fi
 # Save the current cron jobs, then append the new jobs (if they don't already exist), and reload them
 (crontab -u $USER_NAME -l 2>/dev/null | grep -v -E "check_for_runner-updates.sh|report_instance_data.sh"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
 
+msg "Reporting in"
+/opt/perforce/command-runner/report_instance_data.sh >> /opt/perforce/command-runner/logs/report-instance-data.log 2>&1
 echo "Installation complete!"
