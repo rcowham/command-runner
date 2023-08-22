@@ -7,7 +7,7 @@ import (
 
 // HandleInstanceCommands handles execution of instance commands and file parsing
 func HandleInstanceCommands(instanceArg, outputJSONFilePath string) error {
-	instanceCommands, err := ReadInstanceCommandsFromYAML(schema.YamlCombineFilePath, instanceArg)
+	instanceCommands, err := ReadInstanceCommandsFromYAML(schema.YamlCmdConfigFilePath, instanceArg)
 	if err != nil {
 		return fmt.Errorf("failed to read instance commands from YAML: %w", err)
 	}
@@ -24,7 +24,7 @@ func HandleInstanceCommands(instanceArg, outputJSONFilePath string) error {
 		return fmt.Errorf("failed to write JSON to file: %w", err)
 	}
 
-	if err := FileParserFromYAMLConfigInstance(schema.YamlCombineFilePath, outputJSONFilePath, instanceArg); err != nil {
+	if err := FileParserFromYAMLConfigInstance(schema.YamlCmdConfigFilePath, outputJSONFilePath, instanceArg); err != nil {
 		return fmt.Errorf("failed to parse file from YAML config for instance: %w", err)
 	}
 

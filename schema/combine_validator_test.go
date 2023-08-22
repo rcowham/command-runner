@@ -2,7 +2,7 @@ package schema
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -14,7 +14,7 @@ func TestDirectFileRead(t *testing.T) {
 
 	for _, filename := range testFiles {
 		t.Run(filename, func(t *testing.T) {
-			_, err := ioutil.ReadFile(filepath.Join("testfiles", filename))
+			_, err := os.ReadFile(filepath.Join("testfiles", filename))
 			if err != nil {
 				t.Fatalf("Failed to read %s: %v", filename, err)
 			} else {
@@ -24,7 +24,7 @@ func TestDirectFileRead(t *testing.T) {
 	}
 }
 
-func TestValidateCombineYAMLFromFile(t *testing.T) {
+func TestValidateCmdConfigYAMLFromFile(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		name     string
@@ -92,7 +92,7 @@ func TestValidateCombineYAMLFromFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fmt.Printf("Running test: %s\n", tt.name)
 			// Validate the content
-			err := ValidateCombineYAML(tt.filepath)
+			err := ValidateCmdConfigYAML(tt.filepath)
 			if tt.wantErr {
 				assert.Error(t, err, "Expected an error")
 			} else {

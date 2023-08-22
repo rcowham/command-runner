@@ -45,24 +45,24 @@ metrics_passwd=password-for-pushgateway
 report_instance_logfile=/log/file/location   #
 ```
 
-4. **Setup combine.yaml**
+4. **Setup cmd_config.yaml**
 cd configs
-vi combine.yaml
+vi cmd_config.yaml
 
-sample configs/combine.yaml
+sample configs/cmd_config.yaml
 ```
 files:
-  - pathtofile: "/etc/hosts"    #Full Path to the File
-    monitor_tag: "etc hosts"    #Tag Name for Monitoring
-    keywords:                   #List of Keywords to Look for. If parseAll is set to true this is disregarded
-      - keyword1                #Line to parse that was this keyword
-      - keyword2                #Line to parse that was this keyword aswell
-    parseAll: true              #Set this to true and parse the entire file while false will only parse keywords
-    parsingLevel: server        #Setting to "server" will parse the entire. "instance" will only run if p4d is installed
-    sanitizationKeywords:       #While parsing remove any of these lines with these words
+  - pathtofile: "/etc/hosts"    # Full Path to the File
+    monitor_tag: "etc hosts"    # Tag Name for Monitoring
+    keywords:                   # List of Keywords to Look for. If parseAll is set to true this is disregarded
+      - keyword1                # Line to parse that contains this keyword
+      - keyword2                # Line to parse that contains this keyword as well
+    parseAll: true              # Set this to true and parse the entire file. If false will only parse lines matching keywords
+    parsingLevel: server        # Setting to "server" will parse the entire. "instance" will only run if p4d is installed
+    sanitizationKeywords:       # While parsing remove any of these lines containing these words - allows for removal of sensitive info
       - C1A
-  - pathtofile: /p4/common/config/p4_%INSTANCE%.vars    #Where %INSTANCE% will replace the p4d instance id.
-    monitor_tag: "p4 vars"      #Tag Name for Monitoring
+  - pathtofile: /p4/common/config/p4_%INSTANCE%.vars    # Where %INSTANCE% will replace the p4d instance id.
+    monitor_tag: "p4 vars"      # Tag Name for Monitoring
     keywords:
       - export MAILTO
       - export P4USER
@@ -74,9 +74,9 @@ files:
       - secret
 
 instance_commands:
-  - description: "p4 configure show allservers" #Breif description commands or information about command being ran
-    command: "p4 configure show allservers"     #Command to run and gather output from (Beware of escape characters)
-    monitor_tag: "p4 configure"                 #Tag Name for Monitoring
+  - description: "p4 configure show allservers" # Brief description commands or information about command being ran
+    command: "p4 configure show allservers"     # Command to run and gather output from (Beware of escape characters)
+    monitor_tag: "p4 configure"                 # Tag Name for Monitoring
   - description: "p4 triggers"
     command: "p4 triggers -o | awk '/^Triggers:/ {flag=1; next} /^$/ {flag=0} flag' | sed 's/^[ \\t]*//'"
     monitor_tag: "p4 triggers"
@@ -94,9 +94,9 @@ instance_commands:
     monitor_tag: "p4 ztag"
 
 server_commands:
-  - description: Server host information        #Breif description commands or information about command being ran
-    command: hostnamectl                        #Command to run and gather output from (Beware of escape characters)
-    monitor_tag:  hostnamectl                   #Tag Name for Monitoring
+  - description: Server host information        # Brief description commands or information about command being ran
+    command: hostnamectl                        # Command to run and gather output from (Beware of escape characters)
+    monitor_tag:  hostnamectl                   # Tag Name for Monitoring
   - description: Current active services
     command: systemctl --type=service --state=active
     monitor_tag: systemd

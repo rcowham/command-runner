@@ -10,7 +10,6 @@ import (
 // HandleServerCommands handles execution of server commands and file parsing
 func HandleServerCommands(cloudProvider, outputJSONFilePath string) error {
 	err := HandleCloudProviders(cloudProvider, outputJSONFilePath)
-
 	if err != nil {
 		// Log the error but continue
 		logrus.Errorf("Error handling cloud provider %s: %v", cloudProvider, err)
@@ -19,7 +18,7 @@ func HandleServerCommands(cloudProvider, outputJSONFilePath string) error {
 	// Rest of the code remains the same
 	logrus.Info("Executing server commands...")
 
-	serverCommands, err := ReadServerCommandsFromYAML(schema.YamlCombineFilePath)
+	serverCommands, err := ReadServerCommandsFromYAML(schema.YamlCmdConfigFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to read server commands from YAML: %w", err)
 	}
@@ -36,7 +35,7 @@ func HandleServerCommands(cloudProvider, outputJSONFilePath string) error {
 		return fmt.Errorf("failed to write JSON to file: %w", err)
 	}
 
-	if err := FileParserFromYAMLConfigServer(schema.YamlCombineFilePath, schema.OutputJSONFilePath); err != nil {
+	if err := FileParserFromYAMLConfigServer(schema.YamlCmdConfigFilePath, schema.OutputJSONFilePath); err != nil {
 		return fmt.Errorf("failed to parse file from YAML config server: %w", err)
 	}
 
