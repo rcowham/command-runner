@@ -18,13 +18,13 @@ var (
 	cloudProvider      = kingpin.Flag("cloud", "Cloud provider (aws, gcp, azure, or onprem)").Short('c').Default("onprem").String()
 	debug              = kingpin.Flag("debug", "Enable debug logging").Short('d').Bool()
 	OutputJSONFilePath = kingpin.Flag("output", "Path to the output JSON file").Short('o').Default(schema.DefaultOutputJSONPath).String()
-	instanceArg        = kingpin.Flag("instance", "P4 instance argument for the command-runner").Short('i').String()
-	serverArg          = kingpin.Flag("server", "Server argument for the command-runner").Short('s').Bool()
+	instanceArg        = kingpin.Flag("instance", "SDP instance commands argument for the command-runner").Short('i').String()
+	serverArg          = kingpin.Flag("server", "OS commands argument for the command-runner").Short('s').Bool()
 	version            = "development"
 )
 
 func validateFlags() bool {
-	return isValidProvider() && isValidInstanceOrServer()
+	return isValidProvider() && isValidFlag()
 }
 
 func isValidProvider() bool {
@@ -37,9 +37,10 @@ func isValidProvider() bool {
 	}
 }
 
-func isValidInstanceOrServer() bool {
+// func isValidInstanceOrServer() bool {
+func isValidFlag() bool {
 	if (*instanceArg == "" && !*serverArg) || (*instanceArg != "" && *serverArg) {
-		logrus.Error("Either the 'instance' flag or the 'server' flag should be provided, but not both.")
+		logrus.Error("Either the 'instance' flag or the 'server/os' flag should be provided, but not both.")
 		return false
 	}
 	return true
@@ -67,14 +68,14 @@ func main() {
 	}
 
 	if *serverArg {
-		if err := tools.HandleServerCommands(*cloudProvider, *OutputJSONFilePath); err != nil {
-			logrus.Fatal("Error handling server commands:", err)
+		if err := tools.HandleOsCommands(*cloudProvider, *OutputJSONFilePath); err != nil {
+			logrus.Fatal("Error handling OS commands:", err)
 		}
 	}
 
 	if *instanceArg != "" {
-		if err := tools.HandleInstanceCommands(*instanceArg, *OutputJSONFilePath); err != nil {
-			logrus.Fatal("Error handling instance commands:", err)
+		if err := tools.HandleP4Commands(*instanceArg, *OutputJSONFilePath); err != nil {
+			logrus.Fatal("Error handling P4 commands:", err)
 		}
 	}
 

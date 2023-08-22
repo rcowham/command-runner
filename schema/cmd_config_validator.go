@@ -27,12 +27,12 @@ func ValidateCmdConfigYAML(filePath string) error {
 	}
 
 	// Validate commands and monitor tags
-	if err := validateInstanceCommands(config.P4Commands); err != nil {
+	if err := validateP4Commands(config.P4Commands); err != nil {
 		logrus.Error(err)
 		return err
 	}
 
-	if err := validateServerCommands(config.OsCommands); err != nil {
+	if err := validateOsCommands(config.OsCommands); err != nil {
 		logrus.Error(err)
 		return err
 	}
@@ -58,21 +58,21 @@ func isEmpty(str string) bool {
 
 // Validate for missing commands, monitor tags, and descriptions
 
-// Validations for Instance Commands
-func validateInstanceCommands(commands []Command) error {
+// Validations for P4 Commands
+func validateP4Commands(commands []Command) error {
 	for _, cmd := range commands {
 		if isEmpty(cmd.Command) {
-			err := fmt.Errorf("missing command for instance command: %s", cmd.Description)
+			err := fmt.Errorf("missing command for P4 command: %s", cmd.Description)
 			logrus.Error(err)
 			return err
 		}
 		if isEmpty(cmd.MonitorTag) {
-			err := fmt.Errorf("missing monitor_tag for instance command: %s", cmd.Description)
+			err := fmt.Errorf("missing monitor_tag for P4 command: %s", cmd.Description)
 			logrus.Error(err)
 			return err
 		}
 		if isEmpty(cmd.Description) {
-			err := fmt.Errorf("missing description for instance command: %s", cmd.Description)
+			err := fmt.Errorf("missing description for P4 command: %s", cmd.Description)
 			logrus.Error(err)
 			return err
 		}
@@ -80,21 +80,21 @@ func validateInstanceCommands(commands []Command) error {
 	return nil
 }
 
-// Validations for Server Commands
-func validateServerCommands(commands []Command) error {
+// Validations for OS Commands
+func validateOsCommands(commands []Command) error {
 	for _, cmd := range commands {
 		if isEmpty(cmd.Command) {
-			err := fmt.Errorf("missing command for server command: %s", cmd.Description)
+			err := fmt.Errorf("missing command for OS command: %s", cmd.Description)
 			logrus.Error(err)
 			return err
 		}
 		if isEmpty(cmd.MonitorTag) {
-			err := fmt.Errorf("missing monitor_tag for server command: %s", cmd.Description)
+			err := fmt.Errorf("missing monitor_tag for OS command: %s", cmd.Description)
 			logrus.Error(err)
 			return err
 		}
 		if isEmpty(cmd.Description) {
-			err := fmt.Errorf("missing description for server command: %s", cmd.Description)
+			err := fmt.Errorf("missing description for OS command: %s", cmd.Description)
 			logrus.Error(err)
 			return err
 		}
@@ -127,6 +127,7 @@ func validateFileParser(files []FileConfig) error {
 			logrus.Error(err)
 			return err
 		}
+
 	}
 	return nil
 }

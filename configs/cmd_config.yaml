@@ -8,10 +8,10 @@
 #       - keyword1                # Line to parse that contains this keyword
 #       - keyword2                # Line to parse that contains this keyword as well
 #     parseAll: true              # Set this to true and parse the entire file. If false will only parse lines matching keywords
-#     parsingLevel: server        # Setting to "server" will parse the entire. "instance" will only run if p4d is installed
+#     parsingLevel: server        # Setting to "server" will parse the entire. SDP "instance" will only run if p4d is installed
 #     sanitizationKeywords:       # While parsing remove any of these lines containing these words - allows for removal of sensitive info
 #       - C1A
-#   - pathtofile: /p4/common/config/p4_%INSTANCE%.vars    # Where %INSTANCE% will replace the p4d instance id.
+#   - pathtofile: /p4/common/config/p4_%INSTANCE%.vars    # Where %INSTANCE% will replace the p4d SDP instance id.
 
 files:
   # pathtofile: Full Path to the File

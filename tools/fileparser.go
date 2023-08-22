@@ -10,10 +10,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// FileParserFromYAMLConfigServer reads a YAML configuration, parses the specified files at server level, and appends the
+// FileParserFromYAMLConfigOs reads a YAML configuration, parses the specified files at server level, and appends the
 // results to the output JSON file.
 // Returns an error if any issues arise during the parsing process.
-func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath string) error {
+func FileParserFromYAMLConfigOs(configFilePath string, outputJSONFilePath string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
 		logrus.Errorf("error reading YAML config: %v", err)
@@ -24,7 +24,7 @@ func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath st
 	for _, file := range config.Files {
 		filePath := file.PathToFile
 		if file.ParsingLevel == "server" {
-			if err := parseAndAppendAtServerLevel(filePath, file, outputJSONFilePath); err != nil {
+			if err := parseAndAppendAtOsLevel(filePath, file, outputJSONFilePath); err != nil {
 				logrus.Errorf("error parsing file %s: %v", filePath, err)
 				hadError = true
 				// don't return, continue with the next file
@@ -34,15 +34,15 @@ func FileParserFromYAMLConfigServer(configFilePath string, outputJSONFilePath st
 	if hadError {
 		return fmt.Errorf("encountered errors while parsing some files")
 	}
-	logrus.Info("Successfully parsed and appended data at server level")
+	logrus.Info("Successfully parsed and appended data at OS level")
 	return nil
 }
 
-// FileParserFromYAMLConfigInstance reads a YAML configuration, parses the specified files at instance level
+// FileParserFromYAMLConfigP4 reads a YAML configuration, parses the specified files at instance level
 // (replacing the instance placeholder in the file path with the provided instance name) and appends the results
 // to the output file.
 // Returns an error if any issues arise during the parsing process.
-func FileParserFromYAMLConfigInstance(configFilePath, outputFilePath, instance string) error {
+func FileParserFromYAMLConfigP4(configFilePath, outputFilePath, instance string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
 		return fmt.Errorf("error reading YAML config: %w", err)
@@ -53,7 +53,7 @@ func FileParserFromYAMLConfigInstance(configFilePath, outputFilePath, instance s
 		filePath := file.PathToFile
 		if file.ParsingLevel == "instance" {
 			filePath = strings.Replace(filePath, "%INSTANCE%", instance, 1)
-			if err := parseAndAppendAtInstanceLevel(filePath, file, outputFilePath, instance); err != nil {
+			if err := parseAndAppendAtP4Level(filePath, file, outputFilePath, instance); err != nil {
 				logrus.Errorf("error parsing file %s: %v", filePath, err)
 				hadError = true
 				// don't return, continue with the next file
@@ -66,9 +66,9 @@ func FileParserFromYAMLConfigInstance(configFilePath, outputFilePath, instance s
 	return nil
 }
 
-// parseAndAppendAtServerLevel is an internal function that takes in a filePath, its configuration and an output path.
+// parseAndAppendAtOsLevel is an internal function that takes in a filePath, its configuration and an output path.
 // It parses the content based on the configuration and appends the result to the output file.
-func parseAndAppendAtServerLevel(filePath string, fileConfig schema.FileConfig, outputFilePath string) error {
+func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, outputFilePath string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
 		return err
@@ -77,8 +77,8 @@ func parseAndAppendAtServerLevel(filePath string, fileConfig schema.FileConfig, 
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
-// parseAndAppendAtInstanceLevel is similar to parseAndAppendAtServerLevel, but it's specifically for parsing at the instance level.
-func parseAndAppendAtInstanceLevel(filePath string, fileConfig schema.FileConfig, outputFilePath, instanceArg string) error {
+// parseAndAppendAtP4Level is similar to parseAndAppendAtOsLevel, but it's specifically for parsing at the instance level.
+func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, outputFilePath, instanceArg string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
 		return err

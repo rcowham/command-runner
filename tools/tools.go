@@ -18,8 +18,8 @@ type JSONData struct {
 }
 
 // Function to read p4_commands (formarly instance_commands) from the YAML file
-func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
-	logrus.Debug("Reading instance commands from YAML...")
+func ReadP4CommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
+	logrus.Debug("Reading P4 commands from YAML...")
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		logrus.Error("Failed to read the YAML file:", err)
@@ -32,18 +32,18 @@ func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Comman
 		return nil, err
 	}
 
-	// Update descriptions relative to the instance name
+	// Update descriptions relative to the P4 SDP instance name
 	for i := range config.P4Commands {
 		config.P4Commands[i].Description = fmt.Sprintf("p4d_%s: %s", instanceArg, config.P4Commands[i].Description)
 	}
 
-	logrus.Info("Successfully read instance commands from YAML.")
+	logrus.Info("Successfully read P4 commands from YAML.")
 	return config.P4Commands, nil
 }
 
 // Function to read os_commands (formerly server_commands) from the YAML file
-func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
-	logrus.Debug("Reading server commands from YAML...")
+func ReadOsCommandsFromYAML(filePath string) ([]schema.Command, error) {
+	logrus.Debug("Reading OS commands from YAML...")
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -55,26 +55,26 @@ func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
 		return nil, err
 	}
 
-	logrus.Info("Successfully read server commands from YAML.")
+	logrus.Info("Successfully read OS commands from YAML.")
 	return config.OsCommands, nil
 }
 func ReadCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
 	logrus.Debug("Reading commands from YAML...")
 	commands := make([]schema.Command, 0)
 
-	instanceCommands, err := ReadInstanceCommandsFromYAML(filePath, instanceArg)
+	p4Commands, err := ReadP4CommandsFromYAML(filePath, instanceArg)
 	if err != nil {
-		logrus.Errorf("Error reading instance commands: %s", err)
+		logrus.Errorf("Error reading P4 commands: %s", err)
 		return nil, err
 	}
-	commands = append(commands, instanceCommands...)
+	commands = append(commands, p4Commands...)
 
-	serverCommands, err := ReadServerCommandsFromYAML(filePath)
+	osCommands, err := ReadOsCommandsFromYAML(filePath)
 	if err != nil {
-		logrus.Errorf("Error reading server commands: %s", err)
+		logrus.Errorf("Error reading P4 commands: %s", err)
 		return nil, err
 	}
-	commands = append(commands, serverCommands...)
+	commands = append(commands, osCommands...)
 
 	return commands, nil
 }
