@@ -66,3 +66,6 @@ server_commands:
   - description: SDP Version
     command: "[ -f /p4/sdp/Version ] && cat /p4/sdp/Version || true"
     monitor_tag: SDP Version
+  - description: Command-Runner Version
+    command: "/opt/perforce/command-runner/command-runner --version"
+    monitor_tag: Command-Runner Version
