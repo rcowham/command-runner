@@ -62,12 +62,12 @@ if [[ "$last_github_sha" != "$github_sha" ]]; then
     fi
 
 # Extract the entire lines from the backup script
-old_config_line=$(grep 'declare ConfigFile=' report_instance_data.sh.bak | head -n 1)
-old_log_line=$(grep 'declare report_instance_logfile=' report_instance_data.sh.bak | head -n 1)
+#old_config_line=$(grep 'declare ConfigFile=' report_instance_data.sh.bak | head -n 1)
+#old_log_line=$(grep 'declare report_instance_logfile=' report_instance_data.sh.bak | head -n 1)
 
 # Replace the lines in the new script
-sed -i "s#declare ConfigFile=.*#$old_config_line#" report_instance_data.sh
-sed -i "s#declare report_instance_logfile=.*#$old_log_line#" report_instance_data.sh
+#sed -i "s#declare ConfigFile=.*#$old_config_line#" report_instance_data.sh
+#sed -i "s#declare report_instance_logfile=.*#$old_log_line#" report_instance_data.sh
 
 
     # Ensure the scripts are executable
@@ -76,6 +76,8 @@ sed -i "s#declare report_instance_logfile=.*#$old_log_line#" report_instance_dat
 
     echo "last_github_sha=$github_sha" > "$ConfigFile"
     msg "Project updated"
+    msg "Reporting in"
+    /opt/perforce/command-runner/report_instance_data.sh >> /opt/perforce/command-runner/logs/report-instance-data.log 2>&1
 else
     msg "Project is up-to-date - nothing to do"
 fi
