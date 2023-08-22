@@ -60,10 +60,10 @@ func main() {
 	helpers.SetupLogger(*debug)
 
 	exeDir := schema.GetExecutableDir()
-	schema.YamlCombineFilePath = schema.GetConfigPath(exeDir, schema.DefaultCombineYAMLPath)
-	// Validate the combine.yaml file
-	if err := schema.ValidateCombineYAML(schema.YamlCombineFilePath); err != nil {
-		logrus.Fatal("Error validating combine.yaml:", err)
+	schema.YamlCmdConfigFilePath = schema.GetConfigPath(exeDir, schema.DefaultCmdConfigYAMLPath)
+	// Validate the CmdConfig.yaml file
+	if err := schema.ValidateCmdConfigYAML(schema.YamlCmdConfigFilePath); err != nil {
+		logrus.Fatal("Error validating cmd_config.yaml:", err)
 	}
 
 	if *serverArg {

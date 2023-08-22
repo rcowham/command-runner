@@ -1,11 +1,35 @@
+# Example config file for command-runner
+# files: section allows you to specify complete files to be returned, together with optional processing.
+
+# files:
+#   - pathtofile: "/etc/hosts"    # Full Path to the File
+#     monitor_tag: "etc hosts"    # Tag Name for Monitoring
+#     keywords:                   # List of Keywords to Look for. If parseAll is set to true this is disregarded
+#       - keyword1                # Line to parse that contains this keyword
+#       - keyword2                # Line to parse that contains this keyword as well
+#     parseAll: true              # Set this to true and parse the entire file. If false will only parse lines matching keywords
+#     parsingLevel: server        # Setting to "server" will parse the entire. "instance" will only run if p4d is installed
+#     sanitizationKeywords:       # While parsing remove any of these lines containing these words - allows for removal of sensitive info
+#       - C1A
+#   - pathtofile: /p4/common/config/p4_%INSTANCE%.vars    # Where %INSTANCE% will replace the p4d instance id.
+
 files:
+  # pathtofile: Full Path to the File
+  #   Note: %INSTANCE% will be replaced by the p4d instance id.
   - pathtofile: "/etc/hosts"
+    # monitor_tag: Tag Name for use in monitoring, e.g. by datapushgateway when it receives
     monitor_tag: "etc hosts"
+    # keywords: Array/List of Keywords to search for. If parseAll is set to true this is disregarded.
+    # Every specified keyword means that lines containing that word will be included
     keywords:
       - keyword1
       - keyword2
+    # parseAll: Set this to true and parse the entire file. If false will only parse lines matching keywords
     parseAll: true
+    # parsingLevel: Setting to "server" will parse the entire. "instance" will only run if p4d is installed
     parsingLevel: server
+    # sanitizationKeywords: While parsing remove any of these lines containing these words - allows for removal of sensitive info
+    #    Such as passwords or API tokens
     sanitizationKeywords:
       - C1A
   - pathtofile: /p4/common/config/p4_%INSTANCE%.vars
@@ -27,6 +51,7 @@ files:
     sanitizationKeywords:
       - landscape
 
+# instance_commands: These are commands run against a p4d instance (using bash, and sourcing SDP instance variables as appropriate)
 instance_commands:
   - description: "p4 configure show allservers"
     command: "p4 configure show allservers"
@@ -47,6 +72,7 @@ instance_commands:
     command: "p4 -Ztag info | awk '!/^... (serverDate|serverUptime)/'"
     monitor_tag: "p4 ztag"
 
+# server_commands: These are operating system commands (will be run using bash)
 server_commands:
   - description: Server host information
     command: hostnamectl

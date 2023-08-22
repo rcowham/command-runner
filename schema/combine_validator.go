@@ -2,24 +2,24 @@ package schema
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-// ValidateCombineYAML validates the structure and content of combine.yaml
-func ValidateCombineYAML(filePath string) error {
+// ValidateCmdConfigYAML validates the structure and content of CmdConfig.yaml
+func ValidateCmdConfigYAML(filePath string) error {
 	// Read the YAML file
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		logrus.Errorf("Failed to read YAML file: %v", err)
 		return err
 	}
 
-	// Unmarshal the YAML to the CombineConfig struct
-	var config CombineConfig
+	// Unmarshal the YAML to the CmdConfigConfig struct
+	var config CmdConfig
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		logrus.Errorf("Error parsing YAML: %v", err)
@@ -130,7 +130,7 @@ func validateFileParser(files []FileConfig) error {
 	}
 	return nil
 }
-func EnsureParsingLevel(config CombineConfig) error {
+func EnsureParsingLevel(config CmdConfig) error {
 	for _, file := range config.Files {
 		if file.ParsingLevel == "" {
 			err := fmt.Errorf("missing parsingLevel for file path: %s", file.PathToFile)

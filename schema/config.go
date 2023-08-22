@@ -10,13 +10,13 @@ import (
 
 // Define default paths
 const (
-	DefaultCombineYAMLPath = "configs/combine.yaml"
-	DefaultOutputJSONPath  = "/tmp/out.json"
+	DefaultCmdConfigYAMLPath = "configs/cmd_config.yaml"
+	DefaultOutputJSONPath    = "/tmp/out.json"
 )
 
 var (
-	OutputJSONFilePath  = DefaultOutputJSONPath
-	YamlCombineFilePath = DefaultCombineYAMLPath
+	OutputJSONFilePath    = DefaultOutputJSONPath
+	YamlCmdConfigFilePath = DefaultCmdConfigYAMLPath
 )
 
 func GetExecutableDir() string {
@@ -79,15 +79,15 @@ type FileParserConfig struct {
 	Files []FileConfig `yaml:"files"`
 }
 
-// CombineConfig represents the entire structure of combine.yaml
-type CombineConfig struct {
+// CmdConfig represents the entire structure of cmd_config.yaml
+type CmdConfig struct {
 	//	Files            []FileConfig `yaml:",inline"`
 	Files            []FileConfig `yaml:"files"`
 	InstanceCommands []Command    `yaml:"instance_commands"`
 	ServerCommands   []Command    `yaml:"server_commands"`
 }
 
-// FileConfig represents each file configuration in combine.yaml
+// FileConfig represents each file configuration in cmd_config.yaml
 type FileConfig struct {
 	PathToFile           string   `yaml:"pathtofile"`
 	Keywords             []string `yaml:"keywords"`
@@ -105,7 +105,7 @@ type Command struct {
 }
 
 // CommandConfig holds the configuration from the YAML file for instance_commands and server_commands
-// However, with the inclusion in CombineConfig, you might not need to use this separately.
+// However, with the inclusion in CmdConfigConfig, you might not need to use this separately.
 type CommandConfig struct {
 	InstanceCommands []Command `yaml:"instance_commands"`
 	ServerCommands   []Command `yaml:"server_commands"`
