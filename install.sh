@@ -71,16 +71,16 @@ install_utility() {
 }
 install_golang() {
     current_version=$(go version 2>/dev/null | awk '{print $3}' | tr -d "go")
-    
+
     if [ -z "$current_version" ] || [ "$(printf '%s\n' "$GO_VERSION" "$current_version" | sort -V | head -n1)" != "$GO_VERSION" ]; then
-        
+
         # Detect and remove if Go was installed via package managers
         if [[ " $ID $ID_LIKE " =~ " debian " || " $ID $ID_LIKE " =~ " ubuntu " ]]; then
             apt-get purge -y golang*  # Using purge to remove configurations as well
         elif [[ " $ID $ID_LIKE " =~ " centos " || " $ID $ID_LIKE " =~ " rhel " || " $ID $ID_LIKE " =~ " fedora " ]]; then
             yum remove -y golang
         fi
-        
+
         # The rest of the installation steps from the previous script snippet...
         echo "Installing Go version $GO_VERSION..."
         pushd /tmp > /dev/null
@@ -131,29 +131,52 @@ if [ ! -d "$COMMAND_RUNNER_LOG_DIR" ]; then
     chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
 fi
 
-# Check the current cron jobs for the specific user
+#
+# Backup the current crontab
+backup_file=~/backup_crontab_$(date +%Y%m%d%H%M%S).txt
+crontab -u $USER_NAME -l > $backup_file
+echo "Crontab backed up to $backup_file"
+
+# Fetch the current cron jobs for the specific user
 current_cron=$(crontab -u $USER_NAME -l 2>/dev/null)
 
 # Check if comment exists
-if ! echo "$current_cron" | grep -q "# Command-Runner check for updates and report instance data"; then
-    COMMENT="# Command-Runner check for updates and report instance data"
-    (echo "$current_cron"; echo "$COMMENT") | crontab -u $USER_NAME -
+COMMENT="# Command-Runner check for updates and report instance data"
+if ! echo "$current_cron" | grep -qF "$COMMENT"; then
+    current_cron="$current_cron\n$COMMENT"
+    echo "Added comment to crontab."
+    echo "$COMMENT"
+else
+    echo "Comment already exists in crontab."
 fi
 
-# Add the job if not found
-if ! echo "$current_cron" | grep -q "check_for_runner-updates.sh"; then
-    CRON_JOB_CONTENT="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> $COMMAND_RUNNER_LOG 2>&1"
-    (echo "$current_cron"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
+# Check for and add the two cron jobs
+
+# check_for_runner-updates.sh job
+CRON_JOB_UPDATES="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> $COMMAND_RUNNER_LOG 2>&1"
+if ! echo "$current_cron" | grep -qF "check_for_runner-updates.sh"; then
+    current_cron="$current_cron\n$CRON_JOB_UPDATES"
+    echo "Added check_for_runner-updates.sh job to crontab."
+    echo "$CRON_JOB_UPDATES"
+    echo "$current_cron"
+else
+    echo "check_for_runner-updates.sh job already exists in crontab."
 fi
 
-if ! echo "$current_cron" | grep -q "report_instance_data.sh"; then
-    CRON_JOB_CONTENT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1"
-    (echo "$current_cron"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
+# report_instance_data.sh job
+CRON_JOB_REPORT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1"
+if ! echo "$current_cron" | grep -qF "report_instance_data.sh"; then
+    current_cron="$current_cron\n$CRON_JOB_REPORT"
+    echo "Added report_instance_data.sh job to crontab."
+    echo "$CRON_JOB_REPORT"
+else
+    echo "report_instance_data.sh job already exists in crontab."
 fi
 
-
-# Save the current cron jobs, then append the new jobs (if they don't already exist), and reload them
-(crontab -u $USER_NAME -l 2>/dev/null | grep -v -E "check_for_runner-updates.sh|report_instance_data.sh"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
+# Update the crontab with the new jobs and comment
+echo -e "$current_cron" | crontab -u $USER_NAME -
+echo "Crontab updated successfully"
+#
 
 msg "Reporting in"
 /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
