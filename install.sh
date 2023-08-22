@@ -6,6 +6,9 @@ LOCAL_REPO_PATH="/opt/perforce/command-runner"
 GO_VERSION="1.17"
 COMMAND_RUNNER_LOG="/opt/perforce/command-runner/logs/command-runner.log"
 
+function msg() { echo -e "$*"; }
+function bail() { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
+
 # Ensure running with sudo
 if [ "$EUID" -ne 0 ]; then
     echo "Please run this script with sudo."
