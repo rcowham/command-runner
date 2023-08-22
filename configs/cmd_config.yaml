@@ -51,7 +51,7 @@ files:
     sanitizationKeywords:
       - landscape
 
-# p4_commands (formerly instance_commands): These are commands run against a p4d instance (using bash, and sourcing SDP instance variables as appropriate)
+# p4_commands: These are commands run against a p4d SDP instance (using bash, and sourcing SDP instance variables as appropriate)
 p4_commands:
   - description: "p4 configure show allservers"
     command: "p4 configure show allservers"

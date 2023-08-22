@@ -4,6 +4,7 @@
 REPO_URL="https://github.com/willKman718/command-runner.git"
 LOCAL_REPO_PATH="/opt/perforce/command-runner"
 GO_VERSION="1.17"
+COMMAND_RUNNER_LOG="/opt/perforce/command-runner/logs/command-runner.log"
 
 # Ensure running with sudo
 if [ "$EUID" -ne 0 ]; then
@@ -64,26 +65,36 @@ install_utility() {
     fi
 }
 install_golang() {
-    if ! command -v go &> /dev/null; then
-        echo "Go (golang) not found, installing..."
-        # Change to /tmp directory
+    current_version=$(go version 2>/dev/null | awk '{print $3}' | tr -d "go")
+    
+    if [ -z "$current_version" ] || [ "$(printf '%s\n' "$GO_VERSION" "$current_version" | sort -V | head -n1)" != "$GO_VERSION" ]; then
+        
+        # Detect and remove if Go was installed via package managers
+        if [[ " $ID $ID_LIKE " =~ " debian " || " $ID $ID_LIKE " =~ " ubuntu " ]]; then
+            apt-get purge -y golang*  # Using purge to remove configurations as well
+        elif [[ " $ID $ID_LIKE " =~ " centos " || " $ID $ID_LIKE " =~ " rhel " || " $ID $ID_LIKE " =~ " fedora " ]]; then
+            yum remove -y golang
+        fi
+        
+        # The rest of the installation steps from the previous script snippet...
+        echo "Installing Go version $GO_VERSION..."
         pushd /tmp > /dev/null
         wget https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz
         tar -xvf go$GO_VERSION.linux-amd64.tar.gz
         mv go /usr/local
-        # Return to the original directory
         popd > /dev/null
         echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile
         source /etc/profile
     fi
 }
 
+
 install_utility git
 install_utility curl
 install_utility jq
 install_utility make
-# install_golang #Currently always installing go #TODO FIX THIS
-install_utility golang
+install_golang #Currently always installing go #TODO FIX THIS
+#install_utility golang
 
 # Clone and compile
 [ ! -d "$LOCAL_REPO_PATH" ] && git clone "$REPO_URL" "$LOCAL_REPO_PATH"
@@ -109,10 +120,29 @@ echo "Setting up configuration with setup_config.sh..."
 bash -i "$LOCAL_REPO_PATH/setup_config.sh"
 
 
-# Setup cron jobs
-CRON_JOB_CONTENT="# Command-Runner check for updates and report instance data
-0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> /var/log/command-runner.log 2>&1
-10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> /var/log/report-instance-data.log 2>&1"
+# Ensure log directory exists
+[ ! -d "$COMMAND_RUNNER_LOG_DIR" ] && mkdir -p "$COMMAND_RUNNER_LOG_DIR" && chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
+
+# Check the current cron jobs for the specific user
+current_cron=$(crontab -u $USER_NAME -l 2>/dev/null)
+
+# Check if comment exists
+if ! echo "$current_cron" | grep -q "# Command-Runner check for updates and report instance data"; then
+    COMMENT="# Command-Runner check for updates and report instance data"
+    (echo "$current_cron"; echo "$COMMENT") | crontab -u $USER_NAME -
+fi
+
+# Add the job if not found
+if ! echo "$current_cron" | grep -q "check_for_runner-updates.sh"; then
+    CRON_JOB_CONTENT="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> $COMMAND_RUNNER_LOG 2>&1"
+    (echo "$current_cron"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
+fi
+
+if ! echo "$current_cron" | grep -q "report_instance_data.sh"; then
+    CRON_JOB_CONTENT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1"
+    (echo "$current_cron"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
+fi
+
 
 # Save the current cron jobs, then append the new jobs (if they don't already exist), and reload them
 (crontab -u $USER_NAME -l 2>/dev/null | grep -v -E "check_for_runner-updates.sh|report_instance_data.sh"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -

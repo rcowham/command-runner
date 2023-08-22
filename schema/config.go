@@ -82,11 +82,9 @@ type FileParserConfig struct {
 // CmdConfig represents the entire structure of cmd_config.yaml
 type CmdConfig struct {
 	//	Files            []FileConfig `yaml:",inline"`
-	Files []FileConfig `yaml:"files"`
-	//	InstanceCommands []Command    `yaml:"instance_commands"`
-	P4Commands []Command `yaml:"p4_commands"`
-	//	ServerCommands []Command `yaml:"server_commands"`
-	OsCommands []Command `yaml:"os_commands"`
+	Files      []FileConfig `yaml:"files"`
+	P4Commands []Command    `yaml:"p4_commands"`
+	OsCommands []Command    `yaml:"os_commands"`
 }
 
 // FileConfig represents each file configuration in cmd_config.yaml
@@ -109,9 +107,7 @@ type Command struct {
 // CommandConfig holds the configuration from the YAML file for p4_commands (formerly instance_commands) and os_commands(formerly server_commands)
 // However, with the inclusion in CmdConfigConfig, you might not need to use this separately.
 type CommandConfig struct {
-	//	InstanceCommands []Command `yaml:"instance_commands"`
 	P4Commands []Command `yaml:"p4_commands"`
-	//	ServerCommands []Command `yaml:"server_commands"`
 	OsCommands []Command `yaml:"os_commands"`
 }
 

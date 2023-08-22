@@ -3,7 +3,7 @@
 DEFAULT_DIR="/p4/common/config"
 DEFAULT_CFG_FILE=".push_metrics.cfg"
 DEFAULT_CFG_PATH="$DEFAULT_DIR/$DEFAULT_CFG_FILE"
-DEFAULT_LOG_PATH="/p4/1/logs/report_instance_data.log"
+DEFAULT_LOG_PATH="/opt/perforce/command-runner/logs/command-runner.log"
 CONFIG_CHANGED=0
 LOG_CHANGED=0
 
