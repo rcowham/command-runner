@@ -32,7 +32,7 @@ declare -i swarmRunning=0
 declare -i hasRunning=0
 
 #This scripts default config file location
-ConfigFile="/p4/common/config/.push_metrics.cfg"
+declare ConfigFile="/p4/common/config/.push_metrics.cfg"
 
 ## example .push_metrics.cfg
 # ----------------------

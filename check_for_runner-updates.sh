@@ -62,11 +62,11 @@ if [[ "$last_github_sha" != "$github_sha" ]]; then
     fi
 
 # Extract the entire lines from the backup script
-old_config_line=$(grep 'ConfigFile=' report_instance_data.sh.bak | head -n 1)
+old_config_line=$(grep 'declare ConfigFile=' report_instance_data.sh.bak | head -n 1)
 old_log_line=$(grep 'declare report_instance_logfile=' report_instance_data.sh.bak | head -n 1)
 
 # Replace the lines in the new script
-sed -i "s#ConfigFile=.*#$old_config_line#" report_instance_data.sh
+sed -i "s#declare ConfigFile=.*#$old_config_line#" report_instance_data.sh
 sed -i "s#declare report_instance_logfile=.*#$old_log_line#" report_instance_data.sh
 
 
