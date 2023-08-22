@@ -4,7 +4,6 @@ commandRunnerPath="$cmdrnrscriptDir/command-runner"
 echo "Command Runner Path: $commandRunnerPath"
 TempLog="/tmp/out.json"
 rm -f $TempLog
-# THIS SCRIPT IS ON ITS WAY OUT!
 # report_instance_data.sh
 #
 # Collects basic instance metadata about a customer environment (for AWS and Azure and ultimately other cloud envs)
