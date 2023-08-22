@@ -77,7 +77,7 @@ files:
       - sensitive
       - secret
 
-instance_commands:
+p4_commands:
   - description: "p4 configure show allservers" # Brief description commands or information about command being ran
     command: "p4 configure show allservers"     # Command to run and gather output from (Beware of escape characters)
     monitor_tag: "p4 configure"                 # Tag Name for Monitoring
@@ -97,7 +97,7 @@ instance_commands:
     command: "p4 -Ztag info | awk '!/^... (serverDate|serverUptime)/'"
     monitor_tag: "p4 ztag"
 
-server_commands:
+os_commands:
   - description: Server host information        # Brief description commands or information about command being ran
     command: hostnamectl                        # Command to run and gather output from (Beware of escape characters)
     monitor_tag:  hostnamectl                   # Tag Name for Monitoring
