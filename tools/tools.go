@@ -17,7 +17,7 @@ type JSONData struct {
 	MonitorTag  string `json:"monitor_tag"`
 }
 
-// Function to read instance_commands from the YAML file
+// Function to read p4_commands (formarly instance_commands) from the YAML file
 func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
 	logrus.Debug("Reading instance commands from YAML...")
 	yamlFile, err := ioutil.ReadFile(filePath)
@@ -33,15 +33,15 @@ func ReadInstanceCommandsFromYAML(filePath, instanceArg string) ([]schema.Comman
 	}
 
 	// Update descriptions relative to the instance name
-	for i := range config.InstanceCommands {
-		config.InstanceCommands[i].Description = fmt.Sprintf("p4d_%s: %s", instanceArg, config.InstanceCommands[i].Description)
+	for i := range config.P4Commands {
+		config.P4Commands[i].Description = fmt.Sprintf("p4d_%s: %s", instanceArg, config.P4Commands[i].Description)
 	}
 
 	logrus.Info("Successfully read instance commands from YAML.")
-	return config.InstanceCommands, nil
+	return config.P4Commands, nil
 }
 
-// Function to read server_commands from the YAML file
+// Function to read os_commands (formerly server_commands) from the YAML file
 func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
 	logrus.Debug("Reading server commands from YAML...")
 	yamlFile, err := ioutil.ReadFile(filePath)
@@ -56,7 +56,7 @@ func ReadServerCommandsFromYAML(filePath string) ([]schema.Command, error) {
 	}
 
 	logrus.Info("Successfully read server commands from YAML.")
-	return config.ServerCommands, nil
+	return config.OsCommands, nil
 }
 func ReadCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
 	logrus.Debug("Reading commands from YAML...")

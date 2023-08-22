@@ -23,7 +23,7 @@ func HandleServerCommands(cloudProvider, outputJSONFilePath string) error {
 		return fmt.Errorf("failed to read server commands from YAML: %w", err)
 	}
 
-	base64ServerOutputs, err := ExecuteAndEncodeCommands(serverCommands)
+	base64ServerOutputs, err := ExecuteAndEncodeCommands(serverCommands, false, "")
 	if err != nil {
 		return fmt.Errorf("failed to execute and encode commands: %w", err)
 	}

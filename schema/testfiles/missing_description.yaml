@@ -25,7 +25,7 @@ files:
     sanitizationKeywords:
       - landscape
 
-instance_commands:
+p4_commands:
   - description: "p4 configure show allservers"
     command: "p4 configure show allservers"
     monitor_tag: "p4 configure"
@@ -45,7 +45,7 @@ instance_commands:
     command: "p4 -Ztag info | awk '!/^... (serverDate|serverUptime)/'"
     monitor_tag: "p4 ztag"
 
-server_commands:
+os_command:
   - description: Server host information
     command: hostnamectl
     monitor_tag:  hostnamectl

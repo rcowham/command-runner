@@ -12,7 +12,7 @@ func HandleInstanceCommands(instanceArg, outputJSONFilePath string) error {
 		return fmt.Errorf("failed to read instance commands from YAML: %w", err)
 	}
 
-	base64InstanceOutputs, err := ExecuteAndEncodeCommands(instanceCommands)
+	base64InstanceOutputs, err := ExecuteAndEncodeCommands(instanceCommands, true, instanceArg)
 	if err != nil {
 		return fmt.Errorf("failed to execute and encode instance commands: %w", err)
 	}

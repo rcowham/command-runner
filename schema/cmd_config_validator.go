@@ -27,12 +27,12 @@ func ValidateCmdConfigYAML(filePath string) error {
 	}
 
 	// Validate commands and monitor tags
-	if err := validateInstanceCommands(config.InstanceCommands); err != nil {
+	if err := validateInstanceCommands(config.P4Commands); err != nil {
 		logrus.Error(err)
 		return err
 	}
 
-	if err := validateServerCommands(config.ServerCommands); err != nil {
+	if err := validateServerCommands(config.OsCommands); err != nil {
 		logrus.Error(err)
 		return err
 	}

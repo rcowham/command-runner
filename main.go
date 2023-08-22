@@ -18,7 +18,7 @@ var (
 	cloudProvider      = kingpin.Flag("cloud", "Cloud provider (aws, gcp, azure, or onprem)").Short('c').Default("onprem").String()
 	debug              = kingpin.Flag("debug", "Enable debug logging").Short('d').Bool()
 	OutputJSONFilePath = kingpin.Flag("output", "Path to the output JSON file").Short('o').Default(schema.DefaultOutputJSONPath).String()
-	instanceArg        = kingpin.Flag("instance", "Instance argument for the command-runner").Short('i').String()
+	instanceArg        = kingpin.Flag("instance", "P4 instance argument for the command-runner").Short('i').String()
 	serverArg          = kingpin.Flag("server", "Server argument for the command-runner").Short('s').Bool()
 	version            = "development"
 )

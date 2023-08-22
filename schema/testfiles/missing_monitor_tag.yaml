@@ -5,11 +5,11 @@ files:
     parsingLevel: server
     sanitizationKeywords: []
 
-instance_commands:
+p4_commands:
   - description: "p4 configure show allservers"
     command: "p4 configure show"
     monitor_tag: "p4 configure"
 
-server_commands:
+os_commands:
   - description: "hostname command"
     command: "hostname"

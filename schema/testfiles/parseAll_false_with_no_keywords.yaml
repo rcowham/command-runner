@@ -7,12 +7,12 @@ files:
     sanitizationKeywords:
       - "C1A"
 
-instance_commands:
+p4_commands:
   - description: "p4 configure show allservers"
     command: "p4 configure show allservers"
     monitor_tag: "p4 configure"
 
-server_commands:
+os_commands:
   - description: "Server host information"
     command: "hostnamectl"
     monitor_tag:  "hostnamectl"
