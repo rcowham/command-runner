@@ -4,7 +4,9 @@
 REPO_URL="https://github.com/willKman718/command-runner.git"
 LOCAL_REPO_PATH="/opt/perforce/command-runner"
 GO_VERSION="1.17"
-COMMAND_RUNNER_LOG="/opt/perforce/command-runner/logs/command-runner.log"
+COMMAND_RUNNER_LOG_DIR="/opt/perforce/command-runner/logs"
+COMMAND_RUNNER_LOG="$COMMAND_RUNNER_LOG_DIR/command-runner.log"
+
 
 function msg() { echo -e "$*"; }
 function bail() { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
@@ -124,7 +126,10 @@ bash -i "$LOCAL_REPO_PATH/setup_config.sh"
 
 
 # Ensure log directory exists
-[ ! -d "$COMMAND_RUNNER_LOG_DIR" ] && mkdir -p "$COMMAND_RUNNER_LOG_DIR" && chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
+if [ ! -d "$COMMAND_RUNNER_LOG_DIR" ]; then
+    mkdir -p "$COMMAND_RUNNER_LOG_DIR"
+    chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
+fi
 
 # Check the current cron jobs for the specific user
 current_cron=$(crontab -u $USER_NAME -l 2>/dev/null)
@@ -151,5 +156,5 @@ fi
 (crontab -u $USER_NAME -l 2>/dev/null | grep -v -E "check_for_runner-updates.sh|report_instance_data.sh"; echo "$CRON_JOB_CONTENT") | crontab -u $USER_NAME -
 
 msg "Reporting in"
-/opt/perforce/command-runner/report_instance_data.sh >> /opt/perforce/command-runner/logs/report-instance-data.log 2>&1
+/opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
 echo "Installation complete!"
