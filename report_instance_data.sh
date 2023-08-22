@@ -46,7 +46,8 @@ declare ConfigFile="/p4/common/config/.push_metrics.cfg"
 # ----------------------
 
 # May be overwritten in the config file.
-declare report_instance_logfile="/p4/1/logs/report_instance_data.log"
+#declare report_instance_logfile="/p4/1/logs/report_instance_data.log"
+declare report_instance_logfile="/opt/perforce/command-runner/logs/command-runner.log"
 
 ### Auto Cloud Configs
 ### Timeout in seconds until we're done attempting to contact internal cloud information
