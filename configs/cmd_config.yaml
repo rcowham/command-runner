@@ -90,12 +90,15 @@ os_commands:
   - description: Current crontab -l
     command: crontab -l
     monitor_tag: crontab
+  - description: Disk space in human-readable form
+    command: "df -h"
+    monitor_tag: disk space
   - description: Swarm Present on this server
     command: "[ -f /opt/perforce/swarm/Version ] && cat /opt/perforce/swarm/Version || true"
     monitor_tag: swarm here
-  - description: SDP Version
-    command: "[ -f /p4/sdp/Version ] && cat /p4/sdp/Version || true"
-    monitor_tag: SDP Version
+#  - description: SDP Version
+#    command: "[ -f /p4/sdp/Version ] && cat /p4/sdp/Version || true"
+#    monitor_tag: SDP Version
   - description: SDP Version v2
     command: "cat /p4/sdp/Version"
     monitor_tag: SDP Version
