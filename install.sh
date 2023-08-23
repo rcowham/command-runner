@@ -3,17 +3,20 @@
 # Variables
 REPO_URL="https://github.com/willKman718/command-runner.git"
 LOCAL_REPO_PATH="/opt/perforce/command-runner"
-GO_VERSION="1.17"
+GO_VERSION="1.19"
 COMMAND_RUNNER_LOG_DIR="/opt/perforce/command-runner/logs"
 COMMAND_RUNNER_LOG="$COMMAND_RUNNER_LOG_DIR/command-runner.log"
+SETUP_LOG="/tmp/command-runner_setup.log"
 
 
 function msg() { echo -e "$*"; }
+function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$SETUP_LOG"; msg "$dt: $*"; }
 function bail() { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
+
 
 # Ensure running with sudo
 if [ "$EUID" -ne 0 ]; then
-    echo "Please run this script with sudo."
+    log "Please run this script with sudo."
     exit
 fi
 
@@ -21,11 +24,11 @@ fi
 if [ -f /etc/os-release ]; then
     . /etc/os-release
 else
-    echo "Cannot detect OS type. Exiting..."
+    log "Cannot detect OS type. Exiting..."
     exit 1
 fi
 
-echo "Detected OS: $ID_LIKE ($ID)"
+log "Detected OS: $ID_LIKE ($ID)"
 
 # Determine user existence
 if id "perforce" &>/dev/null; then
@@ -34,7 +37,7 @@ elif id "command-runner" &>/dev/null; then
     USER_NAME="command-runner"
 else
     useradd -m -s /bin/bash command-runner && USER_NAME="command-runner" || {
-        echo "Failed to create user 'command-runner'. Exiting..."
+        log "Failed to create user 'command-runner'. Exiting..."
         exit 1
     }
 fi
@@ -52,18 +55,18 @@ install_utility() {
         elif [[ " $ID $ID_LIKE " =~ " centos " || " $ID $ID_LIKE " =~ " rhel " || " $ID $ID_LIKE " =~ " fedora " ]]; then
             yum install -y $utility
         else
-            echo "Unsupported OS. Exiting..."
+            log "Unsupported OS. Exiting..."
             exit 1
         fi
 
         if [ "$utility" == "golang" ]; then
             command -v go &> /dev/null || {
-            echo "Go is not installed. Exiting..."
+            log "Go is not installed. Exiting..."
             exit 1
         }
         else
             command -v $utility &> /dev/null || {
-            echo "Failed to install $utility. Exiting..."
+            log "Failed to install $utility. Exiting..."
             exit 1
         }
         fi
@@ -87,13 +90,14 @@ install_golang() {
         wget https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz
         tar -xvf go$GO_VERSION.linux-amd64.tar.gz
         mv go /usr/local
+        rm go$GO_VERSION.linux-amd64.tar.gz
         popd > /dev/null
         echo "export PATH=$PATH:/usr/local/go/bin" >> /etc/profile
         source /etc/profile
     fi
 }
 
-
+log "Starting utility installations."
 install_utility git
 install_utility curl
 install_utility jq
@@ -101,21 +105,19 @@ install_utility make
 install_golang #Currently always installing go #TODO FIX THIS
 #install_utility golang
 
+log "Utility installations completed."
+
 # Clone and compile
+log "Starting cloning and compilation process."
 [ ! -d "$LOCAL_REPO_PATH" ] && git clone "$REPO_URL" "$LOCAL_REPO_PATH"
 cd "$LOCAL_REPO_PATH" && {
-    [ -f Makefile ] && make || echo "Makefile not found. Skipping compilation."
+    [ -f Makefile ] && make || log "Makefile not found. Skipping compilation."
 } || {
-    echo "Failed to navigate to $LOCAL_REPO_PATH. Skipping compilation."
+    log "Failed to navigate to $LOCAL_REPO_PATH. Skipping compilation."
 }
 
 # Set permissions
-chown -R $USER_NAME:$USER_NAME "$LOCAL_REPO_PATH"
-chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh"
-
-
-
-# Set permissions
+log "Setting permissions for $LOCAL_REPO_PATH."
 chown -R $USER_NAME:$USER_NAME "$LOCAL_REPO_PATH"
 chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh"
 chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
@@ -131,73 +133,26 @@ if [ ! -d "$COMMAND_RUNNER_LOG_DIR" ]; then
     chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
 fi
 
-#
-# Backup the current crontab
-backup_file=~/backup_crontab_$(date +%Y%m%d%H%M%S).txt
-crontab -u $USER_NAME -l > $backup_file
-echo "Crontab backed up to $backup_file"
-
-# Fetch the current cron jobs for the specific user
-current_cron=$(crontab -u $USER_NAME -l 2>/dev/null)
-
-# Check if comment exists
-COMMENT="# Command-Runner check for updates and report instance data"
-if ! echo "$current_cron" | grep -qF "$COMMENT"; then
-    current_cron="$current_cron\n$COMMENT"
-    echo "Added comment to crontab."
-    echo "$COMMENT"
-else
-    echo "Comment already exists in crontab."
-fi
-
-# Check for and add the two cron jobs
-
-# check_for_runner-updates.sh job
-#CRON_JOB_UPDATES="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> $COMMAND_RUNNER_LOG 2>&1"
-#if ! echo "$current_cron" | grep -qF "check_for_runner-updates.sh"; then
-#    current_cron="$current_cron\n$CRON_JOB_UPDATES"
-#    echo "Added check_for_runner-updates.sh job to crontab."
-#    echo "$CRON_JOB_UPDATES"
-#    echo "$current_cron"
-#else
-#    echo "check_for_runner-updates.sh job already exists in crontab."
-#fi
-
-# report_instance_data.sh job
-#CRON_JOB_REPORT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1"
-#if ! echo "$current_cron" | grep -qF "report_instance_data.sh"; then
-#    current_cron="$current_cron\n$CRON_JOB_REPORT"
-#    echo "Added report_instance_data.sh job to crontab."
-#    echo "$CRON_JOB_REPORT"
-#else
-#    echo "report_instance_data.sh job already exists in crontab."
-#fi
-
-# Update the crontab with the new jobs and comment
-#echo -e "$current_cron" | crontab -u $USER_NAME -
-#echo "Crontab updated successfully"
-#
 
 # Function to check and update a cron job if needed
+current_cron=$(crontab -u $USER_NAME -l 2>/dev/null || echo "")
 update_cron() {
     local job="$1"
     local name="$2"
     if echo "$current_cron" | grep -qF "$name"; then
         if echo "$current_cron" | grep -qF "$job"; then
-            echo "$name job in crontab matches the desired configuration. No changes made."
+            log "$name job in crontab matches the desired configuration. No changes made."
         else
-            echo "$name job in crontab differs from the desired configuration. Updating..."
+            log "$name job in crontab differs from the desired configuration. Updating..."
             # Remove the old job
             current_cron=$(echo -e "$current_cron" | grep -vF "$name")
             # Add the new job
             current_cron="$current_cron\n$job"
-            echo "Updated $name job in crontab."
-            echo "$job"
+            log "Updated $name job in crontab."
         fi
     else
         current_cron="$current_cron\n$job"
-        echo "Added $name job to crontab."
-        echo "$job"
+        log "Added $name job to crontab."
     fi
 }
 
@@ -205,7 +160,7 @@ update_cron() {
 COMMENT="# Command-Runner check for updates and report instance data"
 if ! echo "$current_cron" | grep -qF "$COMMENT"; then
     current_cron="$current_cron\n$COMMENT"
-    echo "Added comment to crontab."
+    log "Added comment to crontab."
 fi
 
 # Check and potentially update the two cron jobs
@@ -220,11 +175,11 @@ update_cron "$CRON_JOB_REPORT" "report_instance_data.sh"
 
 # Update the crontab with the potential changes
 echo -e "$current_cron" | crontab -u $USER_NAME -
-echo "Crontab operations completed."
+log "Crontab operations completed."
 
 
 
-msg "Reporting in"
+log "Reporting in"
 /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
 rm /tmp/out.json
-echo "Installation complete!"
+log "Installation complete!"
