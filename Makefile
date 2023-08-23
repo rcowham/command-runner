@@ -1,4 +1,4 @@
-VERSION := 1.0.13-install-test
+VERSION := 1.0.14-install-test
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date +%F-%T)
 LDFLAGS := -X main.version=$(VERSION)-$(COMMIT_HASH)-$(BUILD_DATE)
