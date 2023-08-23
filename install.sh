@@ -124,7 +124,7 @@ chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
 
 # Call the setup_config.sh script
 echo "Setting up configuration with setup_config.sh..."
-sudo -u $USER_NAME bash -i "$LOCAL_REPO_PATH/setup_cbash -i "$LOCAL_REPO_PATH/setup_config.sh"
+sudo -u $USER_NAME bash -i "$LOCAL_REPO_PATH/setup_config.sh"
 
 
 # Ensure log directory exists
