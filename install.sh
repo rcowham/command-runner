@@ -119,8 +119,8 @@ cd "$LOCAL_REPO_PATH" && {
 # Set permissions
 log "Setting permissions for $LOCAL_REPO_PATH."
 chown -R $USER_NAME:$USER_NAME "$LOCAL_REPO_PATH"
-chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh"
-chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
+chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh" "$LOCAL_REPO_PATH/setup_config.sh"
+# chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
 
 # Call the setup_config.sh script
 echo "Setting up configuration with setup_config.sh..."
@@ -183,3 +183,5 @@ log "Reporting in"
 sudo -u $USER_NAME /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
 rm /tmp/out.json
 log "Installation complete!"
+chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
+

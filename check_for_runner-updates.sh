@@ -74,7 +74,9 @@ if [[ "$last_github_sha" != "$github_sha" ]]; then
         log "Makefile not found. Compilation skipped."
     fi
 
-    # ... [Same permission checks and report]
+    # Ensure the scripts are executable
+    chmod +x check_for_runner-updates.sh
+    chmod +x report_instance_data.sh
 
     echo "last_github_sha=$github_sha" > "$ConfigFile" || log "Warning: Failed to update config with the latest SHA. Continuing..."
     log "Updated config with latest GitHub SHA."
