@@ -61,7 +61,17 @@ while true; do
     fi
 done
 
-read -p "Enter metrics customer (e.g., Customer-Name): " metrics_customer
+while true; do
+    read -p "Enter metrics customer (e.g., Customer_Name or Customer-Name): " metrics_customer
+
+    if [[ "$metrics_customer" =~ [^a-zA-Z0-9_-] ]]; then
+        echo "Error: Only alphanumeric characters, hyphens, and underscores are allowed. Try again."
+    else
+        break
+    fi
+done
+
+
 read -p "Enter metrics instance (default is hostname: $(hostname)): " metrics_instance
 
 if [ -z "$metrics_instance" ]; then
