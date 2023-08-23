@@ -65,7 +65,7 @@ fi
 # Ensure the directory exists
 CONFIG_DIR="$(dirname "$TARGET_CFG_PATH")"
 mkdir -p "$CONFIG_DIR" || {
-    echo "Failed to create directory $CONFIG_DIR. Exiting..."
+    log "Failed to create directory $CONFIG_DIR. Exiting..."
     exit 1
 }
 
@@ -79,18 +79,18 @@ metrics_passwd=$metrics_passwd
 report_instance_logfile=$report_instance_logfile
 EOF
 
-echo "Configuration saved to $TARGET_CFG_PATH."
+#log "Configuration saved to $TARGET_CFG_PATH."
 
-if [ "$CONFIG_CHANGED" -eq 1 ]; then
-    echo "Updating config path in report_instance_data.sh"
-    # Update the report_instance_data.sh script with the new config path
-    sed -i "s|ConfigFile=\"/p4/common/config/.push_metrics.cfg\"|ConfigFile=\"$TARGET_CFG_PATH\"|" ./report_instance_data.sh
-fi
+#if [ "$CONFIG_CHANGED" -eq 1 ]; then
+#    log "Updating config path in report_instance_data.sh"
+#    # Update the report_instance_data.sh script with the new config path
+#    sed -i "s|ConfigFile=\"/p4/common/config/.push_metrics.cfg\"|ConfigFile=\"$TARGET_CFG_PATH\"|" ./report_instance_data.sh
+#fi
 
-if [ "$LOG_CHANGED" -eq 1 ]; then
-    echo "Updating log path in report_instance_data.sh"
-    # Update the report_instance_data.sh script with the new log path
-    sed -i "s|declare report_instance_logfile=\"/p4/1/logs/report_instance_data.log\"|declare report_instance_logfile=\"$report_instance_logfile\"|" ./report_instance_data.sh
-else
-    echo "Log paths remain unchanged. No need to update report_instance_data.sh."
-fi
+#if [ "$LOG_CHANGED" -eq 1 ]; then
+#    log "Updating log path in report_instance_data.sh"
+#    # Update the report_instance_data.sh script with the new log path
+#    sed -i "s|declare report_instance_logfile=\"/p4/1/logs/report_instance_data.log\"|declare report_instance_logfile=\"$report_instance_logfile\"|" ./report_instance_data.sh
+#else
+#    echo "Log paths remain unchanged. No need to update report_instance_data.sh."
+#fi
