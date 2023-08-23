@@ -2,6 +2,8 @@
 
 # Script Name: check_for_runner-updates.sh
 # Purpose: Check for updates in a GitHub repository and sync the local copy
+# Determine the home directory of the current user
+export PATH=$PATH:/usr/local/go/bin
 
 # Configuration
 github_repo_url="https://github.com/willKman718/command-runner.git"
@@ -12,7 +14,8 @@ LOG_FILE="/opt/perforce/command-runner/logs/command-runner.log"
 
 function msg() { echo -e "$*"; }
 function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$LOG_FILE"; msg "$dt: $*"; }
-function bail() { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
+function bail() { msg "\nError: ${1:-Unknown Error}\n"; log "Error: ${1:-Unknown Error}\n"; exit ${2:-1}; }
+
 
 # Check for dependencies
 log "Checking for dependencies..."
