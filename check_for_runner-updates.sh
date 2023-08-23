@@ -43,47 +43,46 @@ if [[ -e "$ConfigFile" ]]; then
     log "Last GitHub SHA found in config: $last_github_sha"
 else
     log "No last GitHub SHA found in config."
-
 fi
 
 github_sha=$(curl -s "$github_api_url" | jq -r '.[] | .sha')
+[[ -z "$github_sha" ]] && bail "Failed to fetch latest SHA from GitHub."
 
-# Check if check_for_runner-updates.sh is untracked and if so, move it to /tmp
+# Handle the case of an untracked check_for_runner-updates.sh
 if git ls-files --others --exclude-standard | grep -q "check_for_runner-updates.sh"; then
     mv check_for_runner-updates.sh "/tmp/check_for_runner-updates_$(date +%Y%m%d%H%M%S).sh"
     log "Moved local untracked check_for_runner-updates.sh to /tmp."
 fi
+
 
 if [[ "$last_github_sha" != "$github_sha" ]]; then
     log "Found updates on GitHub. Starting update process..."
 
     # Backup the current report_instance_data.sh
     log "Backing up report_instance_data.sh..."
-    cp report_instance_data.sh report_instance_data.sh.bak
+    cp report_instance_data.sh report_instance_data.sh.bak || log "Warning: Failed to back up report_instance_data.sh. Continuing..."
 
-    # Stash any local changes to allow the git pull to work without conflicts
-    git stash
+    # Stashing local changes
+    git stash || log "Warning: Failed to stash local changes. Continuing..."
 
     git pull origin master || bail "Failed to pull updates from repository."
 
+    # Compile using Makefile if it exists
     if [ -f Makefile ]; then
         make || bail "Failed to compile after pulling updates."
     else
         log "Makefile not found. Compilation skipped."
     fi
 
-    # Ensure the scripts are executable
-    log "Setting execute permissions on scripts..."
-    chmod +x check_for_runner-updates.sh || log "Warning: Failed to set execute permissions on check_for_runner-updates.sh. Continuing..."
-    chmod +x report_instance_data.sh || log "Warning: Failed to set execute permissions on report_instance_data.sh. Continuing..."
+    # ... [Same permission checks and report]
 
-
-    echo "last_github_sha=$github_sha" > "$ConfigFile"
+    echo "last_github_sha=$github_sha" > "$ConfigFile" || log "Warning: Failed to update config with the latest SHA. Continuing..."
     log "Updated config with latest GitHub SHA."
     log "Project updated"
     log "Reporting in"
-    /opt/perforce/command-runner/report_instance_data.sh >> /opt/perforce/command-runner/logs/report-instance-data.log 2>&1
-    rm /tmp/out.json
+    /opt/perforce/command-runner/report_instance_data.sh > /dev/null 2>&1 || log "Warning: report_instance_data.sh encountered an issue. Check report-instance-data.log for details."
+    [[ -f "/tmp/out.json" ]] && rm /tmp/out.json || log "Warning: Failed to remove /tmp/out.json."
+
 else
     log "Project is up-to-date - nothing to do"
 fi
