@@ -6,7 +6,7 @@ LOCAL_REPO_PATH="/opt/perforce/command-runner"
 GO_VERSION="1.19"
 COMMAND_RUNNER_LOG_DIR="/opt/perforce/command-runner/logs"
 COMMAND_RUNNER_LOG="$COMMAND_RUNNER_LOG_DIR/command-runner.log"
-SETUP_LOG="/tmp/command-runner_setup.log"
+SETUP_LOG="/tmp/command-runner_install.log"
 
 
 function msg() { echo -e "$*"; }
@@ -30,6 +30,7 @@ fi
 
 log "Detected OS: $ID_LIKE ($ID)"
 
+
 # Determine user existence
 if id "perforce" &>/dev/null; then
     USER_NAME="perforce"
@@ -41,6 +42,8 @@ else
         exit 1
     }
 fi
+
+chown $USER_NAME:$USER_NAME "$SETUP_LOG"
 
 install_utility() {
     utility=$1
@@ -122,16 +125,18 @@ chown -R $USER_NAME:$USER_NAME "$LOCAL_REPO_PATH"
 chmod +x "$LOCAL_REPO_PATH/check_for_runner-updates.sh" "$LOCAL_REPO_PATH/report_instance_data.sh" "$LOCAL_REPO_PATH/setup_config.sh"
 # chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
 
-# Call the setup_config.sh script
-echo "Setting up configuration with setup_config.sh..."
-sudo -u $USER_NAME bash -i "$LOCAL_REPO_PATH/setup_config.sh"
-
-
 # Ensure log directory exists
 if [ ! -d "$COMMAND_RUNNER_LOG_DIR" ]; then
     mkdir -p "$COMMAND_RUNNER_LOG_DIR"
     chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
 fi
+
+# Call the setup_config.sh script
+log "Setting up configuration with setup_config.sh..."
+sudo -u $USER_NAME bash -i "$LOCAL_REPO_PATH/setup_config.sh"
+
+
+
 
 
 # Function to check and update a cron job if needed

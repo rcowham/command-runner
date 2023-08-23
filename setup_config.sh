@@ -6,7 +6,7 @@ DEFAULT_CFG_PATH="$DEFAULT_DIR/$DEFAULT_CFG_FILE"
 DEFAULT_LOG_PATH="/opt/perforce/command-runner/logs/command-runner.log"
 #CONFIG_CHANGED=0
 #LOG_CHANGED=0
-SETUP_LOG="/tmp/command-runnner_setup.log"
+SETUP_LOG="/tmp/command-runner_setup.log"
 
 function msg () { echo -e "$*"; }
 function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$SETUP_LOG"; msg "$dt: $*"; }
