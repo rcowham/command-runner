@@ -43,13 +43,13 @@ files:
     sanitizationKeywords:
       - sensitive
       - secret
-  - pathtofile: "/etc/group"
-    monitor_tag: "etc group"
+  - pathtofile: "/p4/%INSTANCE%/root/license"
+    monitor_tag: "license"
     keywords: []
     parseAll: true
     parsingLevel: instance
     sanitizationKeywords:
-      - landscape
+      - "License:"
 
 # p4_commands: These are commands run against a p4d SDP instance (using bash, and sourcing SDP instance variables as appropriate)
 p4_commands:
