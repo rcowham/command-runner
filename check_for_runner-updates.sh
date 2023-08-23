@@ -16,6 +16,28 @@ function msg() { echo -e "$*"; }
 function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$LOG_FILE"; msg "$dt: $*"; }
 function bail() { msg "\nError: ${1:-Unknown Error}\n"; log "Error: ${1:-Unknown Error}\n"; exit ${2:-1}; }
 
+USER_NAME=$(whoami)  # Get the name of the current user
+current_cron=$(crontab -l 2>/dev/null || echo "")
+
+update_cron() {
+    local job="$1"
+    local name="$2"
+    if echo "$current_cron" | grep -qF "$name"; then
+        if echo "$current_cron" | grep -qF "$job"; then
+            log "$name job in crontab matches the desired configuration. No changes made."
+        else
+            log "$name job in crontab differs from the desired configuration. Updating..."
+            # Remove the old job
+            current_cron=$(echo -e "$current_cron" | grep -vF "$name")
+            # Add the new job
+            current_cron="$current_cron\n$job"
+            log "Updated $name job in crontab."
+        fi
+    else
+        current_cron="$current_cron\n$job"
+        log "Added $name job to crontab."
+    fi
+}
 
 # Check for dependencies
 log "Checking for dependencies..."
@@ -76,7 +98,20 @@ if [[ "$last_github_sha" != "$github_sha" ]]; then
     else
         log "Makefile not found. Compilation skipped."
     fi
+    # Check and potentially update the two cron jobs
 
+    # check_for_runner-updates.sh job
+    CRON_JOB_UPDATES="0 2 * * * $local_repo_path/check_for_runner-updates.sh > /dev/null 2>&1 ||:"
+    update_cron "$CRON_JOB_UPDATES" "check_for_runner-updates.sh"
+
+    # report_instance_data.sh job
+    CRON_JOB_REPORT="10 0 * * * $local_repo_path/report_instance_data.sh > /dev/null 2>&1 ||:"
+    update_cron "$CRON_JOB_REPORT" "report_instance_data.sh"
+
+    # Update the crontab with the potential changes
+    echo -e "$current_cron" | crontab -
+    log "Crontab operations completed."
+    
     # Ensure the scripts are executable
     chmod +x check_for_runner-updates.sh
     chmod +x report_instance_data.sh
