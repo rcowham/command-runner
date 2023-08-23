@@ -124,7 +124,7 @@ chmod +x "$LOCAL_REPO_PATH/setup_config.sh"
 
 # Call the setup_config.sh script
 echo "Setting up configuration with setup_config.sh..."
-bash -i "$LOCAL_REPO_PATH/setup_config.sh"
+sudo -u $USER_NAME bash -i "$LOCAL_REPO_PATH/setup_cbash -i "$LOCAL_REPO_PATH/setup_config.sh"
 
 
 # Ensure log directory exists
@@ -180,6 +180,6 @@ log "Crontab operations completed."
 
 
 log "Reporting in"
-/opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
+sudo -u $USER_NAME /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
 rm /tmp/out.json
 log "Installation complete!"
