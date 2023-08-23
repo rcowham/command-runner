@@ -180,8 +180,7 @@ log "Crontab operations completed."
 
 
 log "Reporting in"
-sudo -u $USER_NAME /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
+sudo -u $USER_NAME bash -l -c /opt/perforce/command-runner/report_instance_data.sh > /dev/null 2>&1 ||:
 rm /tmp/out.json
 log "Installation complete!"
-chown $USER_NAME:$USER_NAME "$COMMAND_RUNNER_LOG_DIR"
 
