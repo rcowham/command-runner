@@ -4,6 +4,7 @@ import (
 	"command-runner/schema"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -53,15 +54,20 @@ func FileParserFromYAMLConfigP4(configFilePath, outputFilePath, instance string)
 		filePath := file.PathToFile
 		if file.ParsingLevel == "instance" {
 			filePath = strings.Replace(filePath, "%INSTANCE%", instance, 1)
-			if err := parseAndAppendAtP4Level(filePath, file, outputFilePath, instance); err != nil {
-				logrus.Errorf("error parsing file %s: %v", filePath, err)
-				hadError = true
-				// don't return, continue with the next file
+			err := parseAndAppendAtP4Level(filePath, file, outputFilePath, instance)
+			if err != nil {
+				if os.IsNotExist(err) { // Check if error is because file does not exist
+					logrus.Warnf("file %s does not exist: %v", filePath, err)
+					hadError = true
+				} else {
+					logrus.Errorf("error parsing file %s: %v", filePath, err)
+					hadError = true
+				}
 			}
 		}
 	}
 	if hadError {
-		return fmt.Errorf("encountered errors while parsing some files")
+		logrus.Warn("Some files encountered errors during parsing. Please check the logs for more details.")
 	}
 	return nil
 }
@@ -71,9 +77,25 @@ func FileParserFromYAMLConfigP4(configFilePath, outputFilePath, instance string)
 func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, outputFilePath string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
+		// If there's an error reading the file, handle it
+		if os.IsNotExist(err) {
+			logrus.Errorf("[OS] creating failed to parse for json")
+			// File does not exist, append specific message to JSON
+			message := fmt.Sprintf("File: %s was not found", filePath)
+			jsonData := JSONData{
+				Command:     "[OS] Failed to parse: " + filePath,
+				Description: fmt.Sprintf("File: %v", filePath),
+				Output:      EncodeToBase64(message),
+				MonitorTag:  fileConfig.MonitorTag,
+			}
+			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
+				logrus.Errorf("[OS] error appending not found file data to output: %v", err)
+			}
+			// Now continue with the loop
+			return nil
+		}
 		return err
 	}
-
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
@@ -81,9 +103,25 @@ func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, outp
 func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, outputFilePath, instanceArg string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
+		// If there's an error reading the file, handle it
+		if os.IsNotExist(err) {
+			logrus.Errorf("[P4] creating failed to parse for json")
+			// File does not exist, append specific message to JSON
+			message := fmt.Sprintf("File: %s was not found", filePath)
+			jsonData := JSONData{
+				Command:     "[P4] Failed to parse: " + filePath,
+				Description: fmt.Sprintf("File: %v", filePath),
+				Output:      EncodeToBase64(message),
+				MonitorTag:  fileConfig.MonitorTag,
+			}
+			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
+				logrus.Errorf("[P4] error appending not found file data to output: %v", err)
+			}
+			// Now continue with the loop
+			return nil
+		}
 		return err
 	}
-
 	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
 }
 
@@ -93,7 +131,9 @@ func parseContent(filePath string, fileConfig schema.FileConfig) (string, error)
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		logrus.Errorf("failed to read file: %q: %v", filePath, err)
-		return "", fmt.Errorf("failed to read file %q: %w", filePath, err)
+		//	return "", fmt.Errorf("failed to read file %q: %w", filePath, err)
+		return "", err // Return the original error
+
 	}
 	content := string(fileContent)
 
