@@ -6,6 +6,11 @@ DEFAULT_CFG_PATH="$DEFAULT_DIR/$DEFAULT_CFG_FILE"
 DEFAULT_LOG_PATH="/opt/perforce/command-runner/logs/command-runner.log"
 CONFIG_CHANGED=0
 LOG_CHANGED=0
+SETUP_LOG="/tmp/command-runnner_setup.log"
+
+unction msg () { echo -e "$*"; }
+function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$SETUP_LOG"; msg "$dt: $*"; }
+function bail () { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
 
 # Check if the default configuration file exists
 if [ -f "$DEFAULT_CFG_PATH" ]; then

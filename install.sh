@@ -153,30 +153,76 @@ fi
 # Check for and add the two cron jobs
 
 # check_for_runner-updates.sh job
-CRON_JOB_UPDATES="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> $COMMAND_RUNNER_LOG 2>&1"
-if ! echo "$current_cron" | grep -qF "check_for_runner-updates.sh"; then
-    current_cron="$current_cron\n$CRON_JOB_UPDATES"
-    echo "Added check_for_runner-updates.sh job to crontab."
-    echo "$CRON_JOB_UPDATES"
-    echo "$current_cron"
-else
-    echo "check_for_runner-updates.sh job already exists in crontab."
-fi
+#CRON_JOB_UPDATES="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh >> $COMMAND_RUNNER_LOG 2>&1"
+#if ! echo "$current_cron" | grep -qF "check_for_runner-updates.sh"; then
+#    current_cron="$current_cron\n$CRON_JOB_UPDATES"
+#    echo "Added check_for_runner-updates.sh job to crontab."
+#    echo "$CRON_JOB_UPDATES"
+#    echo "$current_cron"
+#else
+#    echo "check_for_runner-updates.sh job already exists in crontab."
+#fi
 
 # report_instance_data.sh job
-CRON_JOB_REPORT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1"
-if ! echo "$current_cron" | grep -qF "report_instance_data.sh"; then
-    current_cron="$current_cron\n$CRON_JOB_REPORT"
-    echo "Added report_instance_data.sh job to crontab."
-    echo "$CRON_JOB_REPORT"
-else
-    echo "report_instance_data.sh job already exists in crontab."
-fi
+#CRON_JOB_REPORT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1"
+#if ! echo "$current_cron" | grep -qF "report_instance_data.sh"; then
+#    current_cron="$current_cron\n$CRON_JOB_REPORT"
+#    echo "Added report_instance_data.sh job to crontab."
+#    echo "$CRON_JOB_REPORT"
+#else
+#    echo "report_instance_data.sh job already exists in crontab."
+#fi
 
 # Update the crontab with the new jobs and comment
-echo -e "$current_cron" | crontab -u $USER_NAME -
-echo "Crontab updated successfully"
+#echo -e "$current_cron" | crontab -u $USER_NAME -
+#echo "Crontab updated successfully"
 #
+
+# Function to check and update a cron job if needed
+update_cron() {
+    local job="$1"
+    local name="$2"
+    if echo "$current_cron" | grep -qF "$name"; then
+        if echo "$current_cron" | grep -qF "$job"; then
+            echo "$name job in crontab matches the desired configuration. No changes made."
+        else
+            echo "$name job in crontab differs from the desired configuration. Updating..."
+            # Remove the old job
+            current_cron=$(echo -e "$current_cron" | grep -vF "$name")
+            # Add the new job
+            current_cron="$current_cron\n$job"
+            echo "Updated $name job in crontab."
+            echo "$job"
+        fi
+    else
+        current_cron="$current_cron\n$job"
+        echo "Added $name job to crontab."
+        echo "$job"
+    fi
+}
+
+# Ensure comment is in the crontab or add it if missing
+COMMENT="# Command-Runner check for updates and report instance data"
+if ! echo "$current_cron" | grep -qF "$COMMENT"; then
+    current_cron="$current_cron\n$COMMENT"
+    echo "Added comment to crontab."
+fi
+
+# Check and potentially update the two cron jobs
+
+# check_for_runner-updates.sh job
+CRON_JOB_UPDATES="0 2 * * * $LOCAL_REPO_PATH/check_for_runner-updates.sh > /dev/null 2>&1 ||:"
+update_cron "$CRON_JOB_UPDATES" "check_for_runner-updates.sh"
+
+# report_instance_data.sh job
+CRON_JOB_REPORT="10 0 * * * $LOCAL_REPO_PATH/report_instance_data.sh > /dev/null 2>&1 ||:"
+update_cron "$CRON_JOB_REPORT" "report_instance_data.sh"
+
+# Update the crontab with the potential changes
+echo -e "$current_cron" | crontab -u $USER_NAME -
+echo "Crontab operations completed."
+
+
 
 msg "Reporting in"
 /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1

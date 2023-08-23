@@ -8,8 +8,10 @@ github_repo_url="https://github.com/willKman718/command-runner.git"
 github_api_url="https://api.github.com/repos/willKman718/command-runner/commits?per_page=1"
 local_repo_path="/opt/perforce/command-runner"
 ConfigFile=".update_config"
+LOG_FILE="/opt/perforce/command-runner/logs/command-runner.log"
 
 function msg() { echo -e "$*"; }
+function log () { dt=$(date '+%Y-%m-%d %H:%M:%S'); echo -e "$dt: $*" >> "$LOG_FILE"; msg "$dt: $*"; }
 function bail() { msg "\nError: ${1:-Unknown Error}\n"; exit ${2:-1}; }
 
 # Check for dependencies

@@ -1,4 +1,4 @@
-VERSION := 1.0.10-night
+VERSION := 1.0.11
 COMMIT_HASH := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date +%F-%T)
 LDFLAGS := -X main.version=$(VERSION)-$(COMMIT_HASH)-$(BUILD_DATE)

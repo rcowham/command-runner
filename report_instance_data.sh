@@ -80,7 +80,7 @@ run_command-runner() {
 
     if [[ "$instance_arg" == "--instance="* ]]; then
         local instance_value=${instance_arg#--instance=}
-        local command="run_if_master.sh $instance_value $commandRunnerPath $@ --output=$TempLog $instance_arg"
+        local command="$commandRunnerPath $@ --output=$TempLog $instance_arg"
     else
         local command="$commandRunnerPath $instance_arg $@ --output=$TempLog"
     fi
@@ -265,9 +265,9 @@ if [ $autoCloud -eq 1 ]; then
     #==========================
     # Check if running on AZURE
     log "Checking for AZURE"
-    curl --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep -q "location"
+    curl -s --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep -q "location"
     if [ $? -eq 0 ]; then
-        curl --connect-timeout $autoCloudTimeout -s curl --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep "location"  | awk -F\" '{print $4}' >/dev/null
+        curl -s --connect-timeout $autoCloudTimeout -s -H Metadata:true --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" | grep "location"  | awk -F\" '{print $4}' >/dev/null
         log "You are on an AZURE machine."
         declare -i IsAzure=1
         upcfg "Azure"
@@ -279,9 +279,9 @@ if [ $autoCloud -eq 1 ]; then
     # Check if running on AWS
     log "Checking for AWS"
     #aws_region_check=$(curl --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep -q "region")
-    curl --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep -q "region"
+    curl -s --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep -q "region"
     if [ $? -eq 0 ]; then
-        curl --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep "region"  | awk -F\" '{print $4}' >/dev/null
+        curl -s --connect-timeout $autoCloudTimeout -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep "region"  | awk -F\" '{print $4}' >/dev/null
         log "You are on an AWS machine."
         declare -i IsAWS=1
         upcfg "AWS"
@@ -292,7 +292,7 @@ if [ $autoCloud -eq 1 ]; then
     #==========================
     # Check if running on GCP
     log "Checking for GCP"
-    curl --connect-timeout $autoCloudTimeout -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/?recursive=true" -s | grep -q "google"
+    curl -s --connect-timeout $autoCloudTimeout -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/?recursive=true" -s | grep -q "google"
     if [ $? -eq 0 ]; then
         log "You are on a GCP machine."
         declare -i IsGCP=1
@@ -374,7 +374,7 @@ while [ $STATUS -ne 0 ]; do
     sleep 1
     ((iterations=$iterations+1))
     log "Pushing Support data"
-    result=$(curl --connect-timeout $autoCloudTimeout --retry 5 --user "$metrics_user:$metrics_passwd" --data-binary "@$TempLog" "$metrics_host/json/?customer=$metrics_customer&instance=$metrics_instance")
+    result=$(curl -s --connect-timeout $autoCloudTimeout --retry 5 --user "$metrics_user:$metrics_passwd" --data-binary "@$TempLog" "$metrics_host/json/?customer=$metrics_customer&instance=$metrics_instance")
     STATUS=0
     log "Checking result: $result"
     if [[ "$result" = '{"message":"invalid username or password"}' ]]; then
