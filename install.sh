@@ -180,4 +180,5 @@ echo "Crontab updated successfully"
 
 msg "Reporting in"
 /opt/perforce/command-runner/report_instance_data.sh >> $COMMAND_RUNNER_LOG 2>&1
+rm /tmp/out.json
 echo "Installation complete!"

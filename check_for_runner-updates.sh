@@ -78,6 +78,7 @@ if [[ "$last_github_sha" != "$github_sha" ]]; then
     msg "Project updated"
     msg "Reporting in"
     /opt/perforce/command-runner/report_instance_data.sh >> /opt/perforce/command-runner/logs/report-instance-data.log 2>&1
+    rm /tmp/out.json
 else
     msg "Project is up-to-date - nothing to do"
 fi
