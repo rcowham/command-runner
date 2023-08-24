@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"command-runner/schema"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const autobotsDir = "autobots" // This should be the path to your autobots directory
+var autobotsDir string
+
+func init() {
+	exeDir := schema.GetExecutableDir()
+	autobotsDir = schema.GetConfigPath(exeDir, schema.AutobotsDir)
+}
 
 // HandleAutobotsScripts runs all scripts/binaries in the autobots directory
 func HandleAutobotsScripts(outputFilePath string) error {
