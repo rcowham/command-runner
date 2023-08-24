@@ -40,8 +40,9 @@ func isValidProvider() bool {
 
 // func isValidInstanceOrServer() bool {
 func isValidFlag() bool {
-	if (*instanceArg == "" && !*serverArg) || (*instanceArg != "" && *serverArg) {
-		logrus.Error("Either the 'instance' flag or the 'server/os' flag should be provided, but not both.")
+	if (*instanceArg == "" && !*serverArg && !*autobotsArg) ||
+		(*instanceArg != "" && (*serverArg || *autobotsArg)) {
+		logrus.Error("Flags should be provided in a mutually exclusive manner: 'instance', 'server/os', or 'autobots'.")
 		return false
 	}
 	return true
