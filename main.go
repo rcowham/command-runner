@@ -20,6 +20,7 @@ var (
 	OutputJSONFilePath = kingpin.Flag("output", "Path to the output JSON file").Short('o').Default(schema.DefaultOutputJSONPath).String()
 	instanceArg        = kingpin.Flag("instance", "SDP instance commands argument for the command-runner").Short('i').String()
 	serverArg          = kingpin.Flag("server", "OS commands argument for the command-runner").Short('s').Bool()
+	autobotsArg        = kingpin.Flag("autobots", "Enable running autobots scripts").Short('a').Bool()
 	version            = "development"
 )
 
@@ -78,6 +79,10 @@ func main() {
 			logrus.Fatal("Error handling P4 commands:", err)
 		}
 	}
-
+	if *autobotsArg {
+		if err := tools.HandleAutobotsScripts(*OutputJSONFilePath); err != nil {
+			logrus.Fatal("Error handling autobots scripts:", err)
+		}
+	}
 	logrus.Info("Command-runner completed.")
 }
