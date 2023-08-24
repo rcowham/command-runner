@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -21,15 +22,22 @@ func HandleAutobotsScripts(outputFilePath string) error {
 
 	var results []JSONData
 	for _, file := range files {
+		if !isExecutable(file.Mode()) {
+			logrus.Infof("Skipping non-executable file: %s", file.Name())
+			continue
+		}
+
 		output, err := runCommand(autobotsDir + "/" + file.Name())
 		if err != nil {
-			return fmt.Errorf("error running command %s: %w", file.Name(), err)
+			logrus.Errorf("Error running command %s: %s", file.Name(), err)
+			// Not returning here and instead proceeding to save the output
 		}
+
 		monitorTag := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 		results = append(results, JSONData{
 			Command:     fmt.Sprintf("Autobot: %s", monitorTag),
 			Description: fmt.Sprintf("Output from %s", monitorTag),
-			Output:      EncodeToBase64(output),
+			Output:      EncodeToBase64(output), // Capturing the output regardless
 			MonitorTag:  fmt.Sprintf("Autobot %s", monitorTag),
 		})
 	}
@@ -42,6 +50,10 @@ func HandleAutobotsScripts(outputFilePath string) error {
 	logrus.Info("Autobots scripts executed and results saved.")
 
 	return nil
+}
+
+func isExecutable(mode os.FileMode) bool {
+	return mode&0111 != 0
 }
 
 // runCommand runs the given command and returns its output
