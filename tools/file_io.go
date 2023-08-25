@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/tools/go/analysis/passes/stringintconv"
 )
 
 // Function to write JSON data to a file with indentation for human-readability
@@ -60,9 +59,7 @@ func ReadJSONFromFile(OutputJSONFilePath string) ([]JSONData, error) {
 	return jsonData, nil
 }
 
-//func AppendParsedDataToFile(parsedData []JSONData, OutputJSONFilePath string) error {
-
-func AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath stringintconv) error {
+func AppendParsedDataToFile(parsedData []JSONData, OutputJSONFilePath string) error {
 	logrus.Debugf("Appending parsed data to file: %s", OutputJSONFilePath)
 	// Get the existing JSON data from the file (if it exists)
 	existingJSONData, err := ReadJSONFromFile(OutputJSONFilePath)
