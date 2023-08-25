@@ -17,26 +17,26 @@ import (
 )
 
 // GetGCPInstanceIdentityInfo retrieves the instance identity document and tags from the AWS metadata service.
-func GetGCPInstanceIdentityInfo(outputFilePath string) error {
+func GetGCPInstanceIdentityInfo(OutputJSONFilePath string) error {
 	documentURL := "http://metadata.google.internal/computeMetadata/v1/instance/?recursive=true"
 	documentOUT, err := getGCPEndpoint(documentURL)
 	logrus.Info("Fetching GCP instance identity document...")
 
 	if err != nil {
 		logrus.Errorf("Failed to fetch GCP instance identity document: %s", err)
-		return saveErrorToJSON(outputFilePath, "Instance Identity Document", err.Error(), "GCP")
+		return saveErrorToJSON(OutputJSONFilePath, "Instance Identity Document", err.Error(), "GCP")
 	}
 	// Sanitize sensitive information from documentOUT
 	sanitizedDocument, err := sanitizeGCPInstanceDocument(documentOUT)
 	if err != nil {
 		logrus.Errorf("Failed to sanitize GCP instance identity document: %s", err)
-		return saveErrorToJSON(outputFilePath, "Instance Identity Document Sanitization", err.Error(), "GCP")
+		return saveErrorToJSON(OutputJSONFilePath, "Instance Identity Document Sanitization", err.Error(), "GCP")
 	}
 
 	// Get the existing JSON data from the file
-	existingJSONData, err := ReadJSONFromFile(outputFilePath)
+	existingJSONData, err := ReadJSONFromFile(OutputJSONFilePath)
 	if err != nil && !os.IsNotExist(err) {
-		logrus.Errorf("Failed to read JSON from file %s: %s", outputFilePath, err)
+		logrus.Errorf("Failed to read JSON from file %s: %s", OutputJSONFilePath, err)
 		return err
 	}
 
@@ -52,8 +52,8 @@ func GetGCPInstanceIdentityInfo(outputFilePath string) error {
 	// existingJSONData = append(existingJSONData)
 
 	// Write the updated JSON data back to the file
-	if err := WriteJSONToFile(existingJSONData, outputFilePath); err != nil {
-		logrus.Errorf("Failed to write JSON to file %s: %s", outputFilePath, err)
+	if err := WriteJSONToFile(existingJSONData, OutputJSONFilePath); err != nil {
+		logrus.Errorf("Failed to write JSON to file %s: %s", OutputJSONFilePath, err)
 		return err
 	}
 	logrus.Info("Successfully updated JSON data with GCP instance information.")
