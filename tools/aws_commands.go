@@ -25,33 +25,33 @@ const (
 var httpClient = &http.Client{Timeout: ClientTimeout}
 
 // GetAWSToken retrieves the AWS metadata token.
-func GetAWSToken(outputFilePath string) (string, error) {
+func GetAWSToken(OutputJSONFilePath string) (string, error) {
 	logrus.Info("Fetching AWS metadata token...")
 
 	tokenURL := fmt.Sprintf("%s/latest/api/token", AWSEndpoint)
 	req, err := http.NewRequest("PUT", tokenURL, nil)
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSToken", fmt.Sprintf("Failed to create request for AWS token: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSToken", fmt.Sprintf("Failed to create request for AWS token: %s", err), "AWS")
 		return "", err
 	}
 	req.Header.Set("X-aws-ec2-metadata-token-ttl-seconds", AWSTokenTTL)
 	resp, err := httpClient.Do(req)
 
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSToken", fmt.Sprintf("HTTP error while fetching token: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSToken", fmt.Sprintf("HTTP error while fetching token: %s", err), "AWS")
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	token, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSToken", fmt.Sprintf("Failed to read response body: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSToken", fmt.Sprintf("Failed to read response body: %s", err), "AWS")
 		return "", err
 	}
 
 	// Check if the token length is zero
 	if len(token) == 0 {
-		saveErrorToJSON(outputFilePath, "GetAWSToken", "Received empty AWS metadata token", "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSToken", "Received empty AWS metadata token", "AWS")
 		return "", fmt.Errorf("received empty AWS metadata token")
 	}
 
@@ -60,19 +60,19 @@ func GetAWSToken(outputFilePath string) (string, error) {
 }
 
 // GetAWSInstanceIdentityInfo retrieves the instance identity document and tags from the AWS metadata service.
-func GetAWSInstanceIdentityInfo(outputFilePath string) error {
-	token, err := GetAWSToken(outputFilePath)
+func GetAWSInstanceIdentityInfo(OutputJSONFilePath string) error {
+	token, err := GetAWSToken(OutputJSONFilePath)
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get AWS token: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get AWS token: %s", err), "AWS")
 		return err
 	}
 
 	documentURL := fmt.Sprintf("%s/latest/dynamic/instance-identity/document", AWSEndpoint)
 	//documentOUT, err := getAWSEndpoint(token, documentURL)
-	documentOUT, err := getAWSEndpoint(token, documentURL, outputFilePath)
+	documentOUT, err := getAWSEndpoint(token, documentURL, OutputJSONFilePath)
 
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get instance identity document: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get instance identity document: %s", err), "AWS")
 		return err
 	}
 	logrus.Debug("Instance Identity Document Raw:")
@@ -80,18 +80,18 @@ func GetAWSInstanceIdentityInfo(outputFilePath string) error {
 
 	metadataURL := fmt.Sprintf("%s/latest/meta-data/tags/instance/", AWSEndpoint)
 	//metadataOUT, err := getAWSEndpoint(token, metadataURL)
-	metadataOUT, err := getAWSEndpoint(token, metadataURL, outputFilePath)
+	metadataOUT, err := getAWSEndpoint(token, metadataURL, OutputJSONFilePath)
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get metadata: %s", err), "AWS metadata")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get metadata: %s", err), "AWS metadata")
 		return err
 	}
 	logrus.Debug("Metadata Raw:")
 	logrus.Debug(string(metadataOUT))
 
 	// Get the existing JSON data from the file
-	existingJSONData, err := ReadJSONFromFile(outputFilePath)
+	existingJSONData, err := ReadJSONFromFile(OutputJSONFilePath)
 	if err != nil && !os.IsNotExist(err) {
-		saveErrorToJSON(outputFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Error reading JSON from file: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Error reading JSON from file: %s", err), "AWS")
 		return err
 	}
 
@@ -113,35 +113,35 @@ func GetAWSInstanceIdentityInfo(outputFilePath string) error {
 	existingJSONData = append(existingJSONData, metadataJSON)
 
 	// Write the updated JSON data back to the file
-	if err := WriteJSONToFile(existingJSONData, outputFilePath); err != nil {
-		saveErrorToJSON(outputFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Error writing JSON to file: %s", err), "AWS")
+	if err := WriteJSONToFile(existingJSONData, OutputJSONFilePath); err != nil {
+		saveErrorToJSON(OutputJSONFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Error writing JSON to file: %s", err), "AWS")
 		return err
 	}
 
 	return nil
 }
 
-func getAWSEndpoint(token, url, outputFilePath string) ([]byte, error) { // Added outputFilePath parameter
+func getAWSEndpoint(token, url, OutputJSONFilePath string) ([]byte, error) { // Added OutputJSONFilePath parameter
 	url = strings.TrimSpace(url)
 
 	logrus.Debugf("Fetching data from AWS endpoint: %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "getAWSEndpoint", fmt.Sprintf("Failed to create request: %s", err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "getAWSEndpoint", fmt.Sprintf("Failed to create request: %s", err), "AWS")
 		return nil, err
 	}
 	req.Header.Set("X-aws-ec2-metadata-token", token)
 	resp, err := httpClient.Do(req)
 
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "getAWSEndpoint", fmt.Sprintf("HTTP request failed for URL %s: %s", url, err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "getAWSEndpoint", fmt.Sprintf("HTTP request failed for URL %s: %s", url, err), "AWS")
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		saveErrorToJSON(outputFilePath, "getAWSEndpoint", fmt.Sprintf("Failed to read response body for URL %s: %s", url, err), "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "getAWSEndpoint", fmt.Sprintf("Failed to read response body for URL %s: %s", url, err), "AWS")
 		return nil, err
 	}
 
@@ -150,7 +150,7 @@ func getAWSEndpoint(token, url, outputFilePath string) ([]byte, error) { // Adde
 		return body, nil
 	} else if resp.StatusCode != http.StatusOK {
 		errorMsg := fmt.Sprintf("Unexpected response status for URL %s: %s", url, resp.Status)
-		saveErrorToJSON(outputFilePath, "getAWSEndpoint", errorMsg, "AWS")
+		saveErrorToJSON(OutputJSONFilePath, "getAWSEndpoint", errorMsg, "AWS")
 		return nil, fmt.Errorf(errorMsg)
 	}
 

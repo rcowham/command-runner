@@ -23,7 +23,7 @@ func init() {
 }
 
 // HandleAutobotsScripts runs all scripts/binaries in the autobots directory
-func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsArg bool) error {
+func HandleAutobotsScripts(OutputJSONFilePath string, instanceArg string, autobotsArg bool) error {
 	files, err := ioutil.ReadDir(autobotsDir)
 	if err != nil {
 		return fmt.Errorf("error reading autobots directory: %w", err)
@@ -40,11 +40,13 @@ func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsAr
 		for _, file := range files {
 			if !isExecutable(file.Mode()) || !strings.HasPrefix(file.Name(), prefix) {
 				// Skip files that don't match the current prefix
+				logrus.Debugf("Skipping files that dont match prefix")
 				continue
 			}
 
 			// For P4_ prefix, prepend is true; for OS_ prefix, prepend is false
 			prepend := prefix == "P4_"
+			logrus.Debugf("running P4 Autobots")
 			output, err := runCommand(autobotsDir+"/"+file.Name(), instanceArg, prepend)
 
 			if err != nil {
@@ -69,10 +71,10 @@ func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsAr
 				MonitorTag:  fmt.Sprintf("Autobot %s", monitorTag),
 			}
 			logrus.Debugf("results: %s", []JSONData{jsonData})
-			logrus.Debugf("outputFilePath: %s", outputFilePath)
+			logrus.Debugf("OutputJSONFilePath: %s", OutputJSONFilePath)
 
-			// Save results to outputFilePath
-			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
+			// Save results to OutputJSONFilePath
+			if err := AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath); err != nil {
 				logrus.Errorf("[Autobots] error appending data to output for %s: %v", prefix, err)
 			}
 		}

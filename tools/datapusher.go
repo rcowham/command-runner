@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	maxIterations    = 5
-	autoCloudTimeout = 5 * time.Second // assuming 5 seconds for the timeout
+	//http constants
+	maxIterations = 5
+	//autoCloudTimeout = 5 * time.Second // assuming 5 seconds for the timeout
 )
 
 func PushToDataPushGateway(OutputJSONFilePath string, configFilePath string) error {
@@ -62,7 +63,7 @@ func PushToDataPushGateway(OutputJSONFilePath string, configFilePath string) err
 		}
 		result := string(body)
 
-		logrus.Info("Checking result:", result)
+		logrus.Infof("Checking result: %s", result)
 
 		if result == `{"message":"invalid username or password"}` {
 			STATUS = 1

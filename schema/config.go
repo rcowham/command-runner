@@ -11,12 +11,12 @@ import (
 // Define default paths
 const (
 	DefaultCmdConfigYAMLPath = "configs/cmd_config.yaml"
-	DefaultOutputJSONPath    = "/tmp/out.json"
+	OutputJSONFilePath       = "/tmp/out.json"
 	AutobotsDir              = "autobots"
 )
 
 var (
-	OutputJSONFilePath    = DefaultOutputJSONPath
+	//	OutputJSONFilePath    = DefaultOutputJSONPath
 	YamlCmdConfigFilePath = DefaultCmdConfigYAMLPath
 )
 

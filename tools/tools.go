@@ -42,7 +42,7 @@ func ReadP4CommandsFromYAML(filePath, instanceArg string) ([]schema.Command, err
 
 	// Update descriptions relative to the P4 SDP instance name
 	for i := range config.P4Commands {
-		config.P4Commands[i].Description = fmt.Sprintf("p4d_%s: %s", instanceArg, config.P4Commands[i].Description)
+		config.P4Commands[i].Description = fmt.Sprintf("[SDP Instance: %s] %s", instanceArg, config.P4Commands[i].Description)
 	}
 
 	logrus.Info("Successfully read P4 commands from YAML.")
@@ -92,7 +92,7 @@ func EncodeToBase64(input string) string {
 	return base64.StdEncoding.EncodeToString([]byte(input))
 }
 
-func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
+func GetSDPInstances(OutputJSONFilePath string, autobotsArg bool) error {
 
 	logrus.Debugf("Finding p4d instances")
 
@@ -119,13 +119,13 @@ func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
 
 	// Loop through each instance and call workSDPInstance function
 	for _, instanceArg := range sdpInstanceList {
-		handleSDPInstance(outputJSONFilePath, instanceArg, autobotsArg)
+		handleSDPInstance(OutputJSONFilePath, instanceArg, autobotsArg)
 	}
 	return nil
 }
-func handleSDPInstance(outputJSONFilePath string, instanceArg string, autobotsArg bool) {
+func handleSDPInstance(OutputJSONFilePath string, instanceArg string, autobotsArg bool) {
 	// Pass the obtained instance to HandleP4Commands
-	if err := HandleP4Commands(instanceArg, outputJSONFilePath); err != nil {
+	if err := HandleP4Commands(instanceArg, OutputJSONFilePath); err != nil {
 		logrus.Fatalf("Error handling P4 commands for instance %s: %v", instanceArg, err)
 	}
 	logrus.Debugf("Working on SDP instance: %s", instanceArg)
@@ -133,7 +133,7 @@ func handleSDPInstance(outputJSONFilePath string, instanceArg string, autobotsAr
 	// If autobotsArg is true, run the HandleAutobotsScripts
 	if autobotsArg {
 		logrus.Infof("Running autobots...")
-		HandleAutobotsScripts(outputJSONFilePath, instanceArg, autobotsArg)
+		HandleAutobotsScripts(OutputJSONFilePath, instanceArg, autobotsArg)
 	}
 }
 func FindP4D() {

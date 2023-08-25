@@ -14,7 +14,7 @@ import (
 // FileParserFromYAMLConfigOs reads a YAML configuration, parses the specified files at server level, and appends the
 // results to the output JSON file.
 // Returns an error if any issues arise during the parsing process.
-func FileParserFromYAMLConfigOs(configFilePath string, outputJSONFilePath string) error {
+func FileParserFromYAMLConfigOs(configFilePath string, OutputJSONFilePath string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
 		logrus.Errorf("error reading YAML config: %v", err)
@@ -25,7 +25,7 @@ func FileParserFromYAMLConfigOs(configFilePath string, outputJSONFilePath string
 	for _, file := range config.Files {
 		filePath := file.PathToFile
 		if file.ParsingLevel == "server" {
-			if err := parseAndAppendAtOsLevel(filePath, file, outputJSONFilePath); err != nil {
+			if err := parseAndAppendAtOsLevel(filePath, file, OutputJSONFilePath); err != nil {
 				logrus.Errorf("error parsing file %s: %v", filePath, err)
 				hadError = true
 				// don't return, continue with the next file
@@ -43,7 +43,7 @@ func FileParserFromYAMLConfigOs(configFilePath string, outputJSONFilePath string
 // (replacing the instance placeholder in the file path with the provided instance name) and appends the results
 // to the output file.
 // Returns an error if any issues arise during the parsing process.
-func FileParserFromYAMLConfigP4(configFilePath, outputFilePath, instance string) error {
+func FileParserFromYAMLConfigP4(configFilePath, OutputJSONFilePath, instance string) error {
 	config, err := readYAMLConfig(configFilePath)
 	if err != nil {
 		return fmt.Errorf("error reading YAML config: %w", err)
@@ -54,7 +54,7 @@ func FileParserFromYAMLConfigP4(configFilePath, outputFilePath, instance string)
 		filePath := file.PathToFile
 		if file.ParsingLevel == "instance" {
 			filePath = strings.Replace(filePath, "%INSTANCE%", instance, 1)
-			err := parseAndAppendAtP4Level(filePath, file, outputFilePath, instance)
+			err := parseAndAppendAtP4Level(filePath, file, OutputJSONFilePath, instance)
 			if err != nil {
 				if os.IsNotExist(err) { // Check if error is because file does not exist
 					logrus.Warnf("file %s does not exist: %v", filePath, err)
@@ -74,7 +74,7 @@ func FileParserFromYAMLConfigP4(configFilePath, outputFilePath, instance string)
 
 // parseAndAppendAtOsLevel is an internal function that takes in a filePath, its configuration and an output path.
 // It parses the content based on the configuration and appends the result to the output file.
-func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, outputFilePath string) error {
+func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, OutputJSONFilePath string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
 		// If there's an error reading the file, handle it
@@ -88,7 +88,7 @@ func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, outp
 				Output:      EncodeToBase64(message),
 				MonitorTag:  fileConfig.MonitorTag,
 			}
-			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
+			if err := AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath); err != nil {
 				logrus.Errorf("[OS] error appending not found file data to output: %v", err)
 			}
 			// Now continue with the loop
@@ -96,11 +96,11 @@ func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, outp
 		}
 		return err
 	}
-	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
+	return appendParsedData(filePath, parsedContent, fileConfig, OutputJSONFilePath)
 }
 
 // parseAndAppendAtP4Level is similar to parseAndAppendAtOsLevel, but it's specifically for parsing at the instance level.
-func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, outputFilePath, instanceArg string) error {
+func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, OutputJSONFilePath, instanceArg string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
 		// If there's an error reading the file, handle it
@@ -114,7 +114,7 @@ func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, outp
 				Output:      EncodeToBase64(message),
 				MonitorTag:  fileConfig.MonitorTag,
 			}
-			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
+			if err := AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath); err != nil {
 				logrus.Errorf("[P4] error appending not found file data to output: %v", err)
 			}
 			// Now continue with the loop
@@ -122,7 +122,7 @@ func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, outp
 		}
 		return err
 	}
-	return appendParsedData(filePath, parsedContent, fileConfig, outputFilePath)
+	return appendParsedData(filePath, parsedContent, fileConfig, OutputJSONFilePath)
 }
 
 // parseContent is an internal function that reads the content from a file based on the provided configuration.
@@ -195,7 +195,7 @@ func readYAMLConfig(configFilePath string) (*schema.FileParserConfig, error) {
 }
 
 // appendParsedData takes the parsed content and appends it in a structured format to the provided output file.
-func appendParsedData(filePath string, parsedContent string, fileConfig schema.FileConfig, outputFilePath string) error {
+func appendParsedData(filePath string, parsedContent string, fileConfig schema.FileConfig, OutputJSONFilePath string) error {
 	// Now sanitize the parsed content
 	sanitizedOutput := sanitizeOutput(parsedContent, fileConfig.SanitizationKeywords)
 
@@ -206,6 +206,6 @@ func appendParsedData(filePath string, parsedContent string, fileConfig schema.F
 		MonitorTag:  fileConfig.MonitorTag,
 	}
 
-	return AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath)
+	return AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath)
 
 }
