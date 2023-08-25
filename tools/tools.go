@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -95,7 +94,7 @@ func EncodeToBase64(input string) string {
 
 func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
 
-	log.Println("Finding p4d instances")
+	logrus.Debugf("Finding p4d instances")
 
 	baseDir := "/p4"
 	sdpInstanceList := []string{}
@@ -103,7 +102,7 @@ func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
 	// Read directory /p4
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
-		log.Fatalf("Could not read directory %s: %v", baseDir, err)
+		logrus.Fatalf("Could not read directory %s: %v", baseDir, err)
 	}
 
 	for _, entry := range entries {
@@ -116,7 +115,7 @@ func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
 
 	// Count instances
 	instanceCount := len(sdpInstanceList)
-	log.Printf("Found %d SDP instances", instanceCount)
+	logrus.Debugf("Found %d SDP instances", instanceCount)
 
 	// Loop through each instance and call workSDPInstance function
 	for _, instanceArg := range sdpInstanceList {
@@ -126,14 +125,14 @@ func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
 }
 func handleSDPInstance(outputJSONFilePath string, instanceArg string, autobotsArg bool) {
 	// Pass the obtained instance to HandleP4Commands
-	if err := HandleP4Commands(outputJSONFilePath, instanceArg); err != nil {
+	if err := HandleP4Commands(instanceArg, outputJSONFilePath); err != nil {
 		logrus.Fatalf("Error handling P4 commands for instance %s: %v", instanceArg, err)
 	}
-	log.Printf("Working on SDP instance: %s", instanceArg)
+	logrus.Debugf("Working on SDP instance: %s", instanceArg)
 
 	// If autobotsArg is true, run the HandleAutobotsScripts
 	if autobotsArg {
-		log.Println("Running autobots...")
+		logrus.Infof("Running autobots...")
 		HandleAutobotsScripts(outputJSONFilePath, instanceArg, autobotsArg)
 	}
 }
@@ -141,10 +140,10 @@ func FindP4D() {
 	// Check if p4d is installed
 	_, err := exec.LookPath("p4d")
 	if err != nil {
-		log.Println("p4d is not installed.")
+		logrus.Debugf("p4d is not installed.")
 		P4dInstalled = false
 	} else {
-		log.Println("p4d is installed.")
+		logrus.Debugf("p4d is installed.")
 		P4dInstalled = true
 	}
 
@@ -153,10 +152,10 @@ func FindP4D() {
 	output, _ := cmd.CombinedOutput() // Ignoring errors here as we just need to know if there's output or not
 
 	if strings.TrimSpace(string(output)) != "" {
-		log.Println("p4d service is running.")
+		logrus.Debugf("p4d service is running.")
 		P4dRunning = true
 	} else {
-		log.Println("p4d service is not running.")
+		logrus.Debugf("p4d service is not running.")
 		P4dRunning = false
 	}
 }

@@ -26,37 +26,51 @@ func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsAr
 		return fmt.Errorf("error reading autobots directory: %w", err)
 	}
 
-	var results []JSONData
-	for _, file := range files {
-		if !isExecutable(file.Mode()) {
-			logrus.Infof("Skipping non-executable file: %s", file.Name())
-			continue
+	// First process OS_ prefixed files, then P4_ prefixed files
+	prefixes := []string{"OS_", "P4_"}
+	for _, prefix := range prefixes {
+		for _, file := range files {
+			if !isExecutable(file.Mode()) || !strings.HasPrefix(file.Name(), prefix) {
+				// Skip files that don't match the current prefix
+				continue
+			}
+
+			// For P4_ prefix, prepend is true; for OS_ prefix, prepend is false
+			prepend := prefix == "P4_"
+			output, err := runCommand(autobotsDir+"/"+file.Name(), instanceArg, prepend)
+
+			if err != nil {
+				logrus.Errorf("Error running command %s: %s", file.Name(), err)
+				// Not returning here and instead proceeding to save the output
+			}
+
+			monitorTag := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+
+			// Conditional Description based on the prefix
+			var description string
+			if prefix == "P4_" {
+				description = fmt.Sprintf("[SDP Instance: %s] Output from %s", instanceArg, monitorTag)
+			} else {
+				description = fmt.Sprintf("[OS] Output from %s", monitorTag)
+			}
+
+			jsonData := JSONData{
+				Command:     fmt.Sprintf("Autobot: %s", monitorTag),
+				Description: description,
+				Output:      EncodeToBase64(output),
+				MonitorTag:  fmt.Sprintf("Autobot %s", monitorTag),
+			}
+			logrus.Debugf("results: %s", []JSONData{jsonData})
+			logrus.Debugf("outputFilePath: %s", outputFilePath)
+
+			// Save results to outputFilePath
+			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
+				logrus.Errorf("[Autobots] error appending data to output for %s: %v", prefix, err)
+			}
 		}
-
-		//output, err := runCommand(autobotsDir + "/" + file.Name())
-		output, err := runCommand(autobotsDir+"/"+file.Name(), instanceArg)
-
-		if err != nil {
-			logrus.Errorf("Error running command %s: %s", file.Name(), err)
-			// Not returning here and instead proceeding to save the output
-		}
-
-		monitorTag := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		results = append(results, JSONData{
-			Command:     fmt.Sprintf("Autobot: %s", monitorTag),
-			Description: fmt.Sprintf("Output from %s", monitorTag),
-			Output:      EncodeToBase64(output), // Capturing the output regardless
-			MonitorTag:  fmt.Sprintf("Autobot %s", monitorTag),
-		})
-	}
-
-	// Save results to outputFilePath
-	if err := AppendParsedDataToFile(results, outputFilePath); err != nil {
-		return fmt.Errorf("error appending autobots data to file: %w", err)
 	}
 
 	logrus.Info("Autobots scripts executed and results saved.")
-
 	return nil
 }
 
@@ -66,17 +80,19 @@ func isExecutable(mode os.FileMode) bool {
 
 // runCommand runs the given command and returns its output
 // TODO move this later
-func runCommand(cmdPath string, instanceArg string) (string, error) {
+func runCommand(cmdPath string, instanceArg string, prepend bool) (string, error) {
 	prependSourceCmd := ""
-	if instanceArg != "" {
+	if prepend {
 		prependSourceCmd = fmt.Sprintf("source /p4/common/config/p4_%s.vars; ", instanceArg)
 	}
-	cmd := exec.Command("/bin/sh", "-c", prependSourceCmd+cmdPath)
+	cmd := exec.Command("/bin/bash", "-c", prependSourceCmd+cmdPath)
 	output, err := cmd.CombinedOutput()
+	logrus.Debugf("Running script like so: %s", cmd)
 	if err != nil {
 		logrus.Errorf("Failed to execute %s: %s", cmdPath, err)
 		return "", err
 	}
+	logrus.Debugf("Output of script %s", output)
 	return string(output), nil
 }
 
