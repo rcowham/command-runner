@@ -40,11 +40,30 @@ func isValidProvider() bool {
 
 // func isValidInstanceOrServer() bool {
 func isValidFlag() bool {
-	if (*instanceArg == "" && !*serverArg && !*autobotsArg) ||
-		(*instanceArg != "" && (*serverArg || *autobotsArg)) {
-		logrus.Error("Flags should be provided in a mutually exclusive manner: 'instance', 'server/os', or 'autobots'.")
+	// If both instanceArg and serverArg are specified, return false
+	if *instanceArg != "" && *serverArg {
+		logrus.Error("Flags 'instance' and 'server' should not be used together.")
 		return false
 	}
+
+	// If neither instanceArg nor serverArg is provided and autobotsArg is not set, return false
+	if *instanceArg == "" && !*serverArg && !*autobotsArg {
+		logrus.Error("Either 'instance' or 'server' flag should be provided.")
+		return false
+	}
+
+	// If autobotsArg is set and instanceArg is provided, return false
+	if *instanceArg != "" && *autobotsArg {
+		logrus.Error("'autobots' cannot be used with 'instance'.")
+		return false
+	}
+
+	// If autobotsArg is set but serverArg is not provided, return false
+	if !*serverArg && *autobotsArg {
+		logrus.Error("'autobots' requires 'server' to be specified.")
+		return false
+	}
+
 	return true
 }
 
@@ -70,8 +89,19 @@ func main() {
 	}
 
 	if *serverArg {
+		// Handle server logic here
 		if err := tools.HandleOsCommands(*cloudProvider, *OutputJSONFilePath); err != nil {
 			logrus.Fatal("Error handling OS commands:", err)
+		}
+		tools.FindP4D()
+		if tools.P4dInstalled {
+			// Do something if p4d is installed
+			if err := tools.GetSDPInstances(*OutputJSONFilePath, *autobotsArg); err != nil {
+				logrus.Fatal("Error handling SDP instances:", err)
+			}
+		}
+		if tools.P4dRunning {
+			// Do something if p4d is running
 		}
 	}
 
@@ -80,10 +110,12 @@ func main() {
 			logrus.Fatal("Error handling P4 commands:", err)
 		}
 	}
-	if *autobotsArg {
-		if err := tools.HandleAutobotsScripts(*OutputJSONFilePath); err != nil {
-			logrus.Fatal("Error handling autobots scripts:", err)
+	/*
+		if *autobotsArg {
+			if err := tools.HandleAutobotsScripts(*OutputJSONFilePath, ""); err != nil {
+				logrus.Fatal("Error handling autobots scripts:", err)
+			}
 		}
-	}
+	*/
 	logrus.Info("Command-runner completed.")
 }

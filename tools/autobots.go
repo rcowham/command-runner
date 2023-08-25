@@ -20,7 +20,7 @@ func init() {
 }
 
 // HandleAutobotsScripts runs all scripts/binaries in the autobots directory
-func HandleAutobotsScripts(outputFilePath string) error {
+func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsArg bool) error {
 	files, err := ioutil.ReadDir(autobotsDir)
 	if err != nil {
 		return fmt.Errorf("error reading autobots directory: %w", err)
@@ -33,7 +33,9 @@ func HandleAutobotsScripts(outputFilePath string) error {
 			continue
 		}
 
-		output, err := runCommand(autobotsDir + "/" + file.Name())
+		//output, err := runCommand(autobotsDir + "/" + file.Name())
+		output, err := runCommand(autobotsDir+"/"+file.Name(), instanceArg)
+
 		if err != nil {
 			logrus.Errorf("Error running command %s: %s", file.Name(), err)
 			// Not returning here and instead proceeding to save the output
@@ -63,8 +65,13 @@ func isExecutable(mode os.FileMode) bool {
 }
 
 // runCommand runs the given command and returns its output
-func runCommand(cmdPath string) (string, error) {
-	cmd := exec.Command(cmdPath)
+// TODO move this later
+func runCommand(cmdPath string, instanceArg string) (string, error) {
+	prependSourceCmd := ""
+	if instanceArg != "" {
+		prependSourceCmd = fmt.Sprintf("source /p4/common/config/p4_%s.vars; ", instanceArg)
+	}
+	cmd := exec.Command("/bin/sh", "-c", prependSourceCmd+cmdPath)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logrus.Errorf("Failed to execute %s: %s", cmdPath, err)
@@ -72,3 +79,20 @@ func runCommand(cmdPath string) (string, error) {
 	}
 	return string(output), nil
 }
+
+/*
+// TODO move this later
+func runCommandWithVars(cmdPath string, prependSource bool, instanceArg string) (string, error) {
+	if prependSource {
+		cmdPath = fmt.Sprintf("source /p4/common/config/p4_%s.vars; %s", instanceArg, cmdPath)
+	}
+
+	cmd := exec.Command("bash", "-c", cmdPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logrus.Errorf("Failed to execute %s: %s", cmdPath, err)
+		return "", err
+	}
+	return string(output), nil
+}
+*/

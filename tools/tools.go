@@ -5,6 +5,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -16,6 +21,10 @@ type JSONData struct {
 	Output      string `json:"output"`
 	MonitorTag  string `json:"monitor_tag"`
 }
+
+// Global variables to store the states
+var P4dInstalled = false
+var P4dRunning = false
 
 // Function to read p4_commands (formarly instance_commands) from the YAML file
 func ReadP4CommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
@@ -82,4 +91,72 @@ func ReadCommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error
 // Encode to Base64
 func EncodeToBase64(input string) string {
 	return base64.StdEncoding.EncodeToString([]byte(input))
+}
+
+func GetSDPInstances(outputJSONFilePath string, autobotsArg bool) error {
+
+	log.Println("Finding p4d instances")
+
+	baseDir := "/p4"
+	sdpInstanceList := []string{}
+
+	// Read directory /p4
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		log.Fatalf("Could not read directory %s: %v", baseDir, err)
+	}
+
+	for _, entry := range entries {
+		instancePath := filepath.Join(baseDir, entry.Name(), "root", "db.counters")
+		if _, err := os.Stat(instancePath); err == nil {
+			// If file exists and is readable
+			sdpInstanceList = append(sdpInstanceList, entry.Name())
+		}
+	}
+
+	// Count instances
+	instanceCount := len(sdpInstanceList)
+	log.Printf("Found %d SDP instances", instanceCount)
+
+	// Loop through each instance and call workSDPInstance function
+	for _, instanceArg := range sdpInstanceList {
+		handleSDPInstance(outputJSONFilePath, instanceArg, autobotsArg)
+	}
+	return nil
+}
+func handleSDPInstance(outputJSONFilePath string, instanceArg string, autobotsArg bool) {
+	// Pass the obtained instance to HandleP4Commands
+	if err := HandleP4Commands(outputJSONFilePath, instanceArg); err != nil {
+		logrus.Fatalf("Error handling P4 commands for instance %s: %v", instanceArg, err)
+	}
+	log.Printf("Working on SDP instance: %s", instanceArg)
+
+	// If autobotsArg is true, run the HandleAutobotsScripts
+	if autobotsArg {
+		log.Println("Running autobots...")
+		HandleAutobotsScripts(outputJSONFilePath, instanceArg, autobotsArg)
+	}
+}
+func FindP4D() {
+	// Check if p4d is installed
+	_, err := exec.LookPath("p4d")
+	if err != nil {
+		log.Println("p4d is not installed.")
+		P4dInstalled = false
+	} else {
+		log.Println("p4d is installed.")
+		P4dInstalled = true
+	}
+
+	// Check if a p4d process is running
+	cmd := exec.Command("pgrep", "-f", "p4d_*")
+	output, _ := cmd.CombinedOutput() // Ignoring errors here as we just need to know if there's output or not
+
+	if strings.TrimSpace(string(output)) != "" {
+		log.Println("p4d service is running.")
+		P4dRunning = true
+	} else {
+		log.Println("p4d service is not running.")
+		P4dRunning = false
+	}
 }
