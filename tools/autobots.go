@@ -12,7 +12,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var autobotsDir string
+var (
+	autobotsDir       string
+	osScriptsExecuted bool
+)
 
 func init() {
 	exeDir := schema.GetExecutableDir()
@@ -29,6 +32,11 @@ func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsAr
 	// First process OS_ prefixed files, then P4_ prefixed files
 	prefixes := []string{"OS_", "P4_"}
 	for _, prefix := range prefixes {
+		// If we are about to process OS_ files and they've already been executed, skip
+		if prefix == "OS_" && osScriptsExecuted {
+			continue
+		}
+
 		for _, file := range files {
 			if !isExecutable(file.Mode()) || !strings.HasPrefix(file.Name(), prefix) {
 				// Skip files that don't match the current prefix
@@ -67,6 +75,11 @@ func HandleAutobotsScripts(outputFilePath string, instanceArg string, autobotsAr
 			if err := AppendParsedDataToFile([]JSONData{jsonData}, outputFilePath); err != nil {
 				logrus.Errorf("[Autobots] error appending data to output for %s: %v", prefix, err)
 			}
+		}
+
+		// Set the flag only after processing all OS-level scripts in one go
+		if prefix == "OS_" {
+			osScriptsExecuted = true
 		}
 	}
 

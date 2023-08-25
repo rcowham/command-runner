@@ -117,5 +117,9 @@ func main() {
 			}
 		}
 	*/
+	if err := tools.PushToDataPushGateway(*OutputJSONFilePath, "/p4/common/config/.push_metrics.cfg"); err != nil {
+		logrus.Fatal("Error handling autobots scripts:", err)
+	}
+
 	logrus.Info("Command-runner completed.")
 }
