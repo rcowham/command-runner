@@ -1,8 +1,9 @@
 module command-runner
 
-go 1.19
+go 1.18
 
 require (
+	github.com/perforce/p4prometheus v0.7.6
 	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/yaml.v2 v2.4.0
 )

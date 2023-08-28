@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kingpin/v2"
-
+	"github.com/perforce/p4prometheus/version"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +24,6 @@ var (
 	autobotsArg        = kingpin.Flag("autobots", "Enable running autobots scripts").Short('a').Bool()
 	MetricsConfigFile  = kingpin.Flag("mcfg", "Path to the metrics configuration file").Default(schema.MetricsConfigFile).Short('m').String()
 	CmdConfigYAMLPath  = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
-	version            = "development"
 )
 
 func validateFlags() bool {
@@ -83,9 +82,11 @@ func isValidFlag() bool {
 }
 
 func main() {
-	kingpin.Version(version)
-
+	kingpin.UsageTemplate(kingpin.CompactUsageTemplate).Version(version.Print("command-runner")).Author("Will Kreitzmann")
+	kingpin.CommandLine.Help = "Runs a configurable set of commands and collects and reports the results as JSON for server/system monitoring\n"
+	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+
 	logrus.Infof("Parsed Flags: cloudProvider=%s, instanceArg=%s, serverArg=%v", *cloudProvider, *instanceArg, *serverArg)
 
 	if !validateFlags() {
