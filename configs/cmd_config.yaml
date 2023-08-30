@@ -50,6 +50,20 @@ files:
     parsingLevel: instance
     sanitizationKeywords:
       - "License:"
+  - pathtofile: /opt/perforce/helix-auth-svc/.env
+    monitor_tag: "HAS_env"
+    keywords:
+    parseAll: false
+    parsingLevel: server
+    sanitizationKeywords:
+      - SAML_IDP_METADATA_URL
+  - pathtofile: /opt/perforce/swarm/data/config.php
+    monitor_tag: "swarm_config"
+    keywords:
+    parseAll: false
+    parsingLevel: server
+    sanitizationKeywords:
+      - password
 
 # p4_commands: These are commands run against a p4d SDP instance (using bash, and sourcing SDP instance variables as appropriate)
 p4_commands:
@@ -62,6 +76,12 @@ p4_commands:
   - description: "p4 extensions and configs"
     command: "p4 extension --list --type extensions; p4 extension --list --type configs"
     monitor_tag: "p4 extensions"
+  - description: "p4 loginhook configuration"
+    command: "p4 extension --configure Auth::loginhook -o"
+    monitor_tag: "p4 loginhook extensions"
+  - description: "p4 loginhook instance configuration"
+    command: "p4 extension --configure Auth::loginhook --name loginhook-a1 -o"
+    monitor_tag: "p4 loginhook instance"
   - description: "p4 servers"
     command: "p4 servers -J"
     monitor_tag: "p4 servers"
@@ -77,7 +97,6 @@ p4_commands:
   - description: Swarm URL v2
     command: "p4 property -n P4.Swarm.URL -l 2>&1"
     monitor_tag: swarm url
-
 
 # os_commands (formerly server_commands): These are operating system commands (will be run using bash)
 os_commands:
