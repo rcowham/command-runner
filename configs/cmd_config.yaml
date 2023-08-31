@@ -53,14 +53,14 @@ files:
   - pathtofile: /opt/perforce/helix-auth-svc/.env
     monitor_tag: "HAS_env"
     keywords:
-    parseAll: false
+    parseAll: true
     parsingLevel: server
     sanitizationKeywords:
       - SAML_IDP_METADATA_URL
   - pathtofile: /opt/perforce/swarm/data/config.php
     monitor_tag: "swarm_config"
     keywords:
-    parseAll: false
+    parseAll: true
     parsingLevel: server
     sanitizationKeywords:
       - password
@@ -118,7 +118,7 @@ os_commands:
 #  - description: SDP Version
 #    command: "[ -f /p4/sdp/Version ] && cat /p4/sdp/Version || true"
 #    monitor_tag: SDP Version
-  - description: SDP Version v2
+  - description: SDP Version
     command: "cat /p4/sdp/Version"
     monitor_tag: SDP Version
   - description: Command-Runner Version

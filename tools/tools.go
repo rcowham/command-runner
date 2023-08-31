@@ -126,7 +126,8 @@ func GetSDPInstances(OutputJSONFilePath string, autobotsArg bool) error {
 func handleSDPInstance(OutputJSONFilePath string, instanceArg string, autobotsArg bool) {
 	// Pass the obtained instance to HandleP4Commands
 	if err := HandleP4Commands(instanceArg, OutputJSONFilePath); err != nil {
-		logrus.Fatalf("Error handling P4 commands for instance %s: %v", instanceArg, err)
+		logrus.Errorf("Error handling P4 commands for instance %s: %v", instanceArg, err)
+		// was fatal but changed to error
 	}
 	logrus.Debugf("Working on SDP instance: %s", instanceArg)
 
