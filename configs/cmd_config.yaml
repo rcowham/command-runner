@@ -122,5 +122,5 @@ os_commands:
     command: "cat /p4/sdp/Version"
     monitor_tag: SDP Version
   - description: Command-Runner Version
-    command: "/opt/perforce/command-runner/command-runner --version 2>&1"
+    command: "$PWD/command-runner-linux-amd64 --version 2>&1"
     monitor_tag: Command-Runner Version

@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"command-runner/schema"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -18,7 +17,7 @@ func HandleOsCommands(cloudProvider, OutputJSONFilePath string) error {
 	// Rest of the code remains the same
 	logrus.Info("Executing OS commands...")
 
-	osCommands, err := ReadOsCommandsFromYAML(schema.YamlCmdConfigFilePath)
+	osCommands, err := ReadOsCommandsFromYAML(defaultCmdConfigYAMLPath) //TODO Fix this
 	if err != nil {
 		return fmt.Errorf("failed to read OS commands from YAML: %w", err)
 	}
@@ -29,14 +28,13 @@ func HandleOsCommands(cloudProvider, OutputJSONFilePath string) error {
 	}
 
 	osJSONData := createJSONDataForCommands(osCommands, base64OScmdsOutputs)
-	//	allJSONData := appendExistingJSONData(osJSONData)
 	allJSONData := appendExistingJSONData(osJSONData, OutputJSONFilePath)
 
 	if err := WriteJSONToFile(allJSONData, OutputJSONFilePath); err != nil {
 		return fmt.Errorf("failed to write JSON to file: %w", err)
 	}
 
-	if err := FileParserFromYAMLConfigOs(schema.YamlCmdConfigFilePath, OutputJSONFilePath); err != nil {
+	if err := FileParserFromYAMLConfigOs(defaultCmdConfigYAMLPath, OutputJSONFilePath); err != nil { //TODO FIX THIS
 		return fmt.Errorf("failed to parse file from YAML config: %w", err)
 	}
 

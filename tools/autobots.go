@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -45,10 +44,14 @@ func HandleAutobotsScripts(OutputJSONFilePath string, instanceArg string, autobo
 			}
 
 			// For P4_ prefix, prepend is true; for OS_ prefix, prepend is false
+			//prependSource := prefix == "P4_"
 			prepend := prefix == "P4_"
-			logrus.Debugf("running P4 Autobots")
-			output, err := runCommand(autobotsDir+"/"+file.Name(), instanceArg, prepend)
 
+			logrus.Debugf("running P4 Autobots")
+			//cmdPath := filepath.Join(autobotsDir, file.Name())
+			//output, _, err := ExecuteShellCommand(cmdPath, prependSource, instanceArg)
+			output, err := RunAutoBotCommand(autobotsDir+"/"+file.Name(), instanceArg, prepend)
+			//output, _, err := ExecuteShellCommand(cmd.Command, prependSource, instanceArg)
 			if err != nil {
 				logrus.Errorf("Error running command %s: %s", file.Name(), err)
 				// Not returning here and instead proceeding to save the output
@@ -93,37 +96,72 @@ func isExecutable(mode os.FileMode) bool {
 	return mode&0111 != 0
 }
 
-// runCommand runs the given command and returns its output
-// TODO move this later
-func runCommand(cmdPath string, instanceArg string, prepend bool) (string, error) {
-	prependSourceCmd := ""
-	if prepend {
-		prependSourceCmd = fmt.Sprintf("source /p4/common/config/p4_%s.vars; ", instanceArg)
-	}
-	cmd := exec.Command("/bin/bash", "-c", prependSourceCmd+cmdPath)
-	output, err := cmd.CombinedOutput()
-	logrus.Debugf("Running script like so: %s", cmd)
+// Handle OS-level Autobots scripts
+func HandleOSAutobotsScripts(OutputJSONFilePath string, instanceArg string) error {
+	files, err := ioutil.ReadDir(autobotsDir)
 	if err != nil {
-		logrus.Errorf("Failed to execute %s: %s", cmdPath, err)
-		return "", err
-	}
-	logrus.Debugf("Output of script %s", output)
-	return string(output), nil
-}
-
-/*
-// TODO move this later
-func runCommandWithVars(cmdPath string, prependSource bool, instanceArg string) (string, error) {
-	if prependSource {
-		cmdPath = fmt.Sprintf("source /p4/common/config/p4_%s.vars; %s", instanceArg, cmdPath)
+		return fmt.Errorf("error reading autobots directory: %w", err)
 	}
 
-	cmd := exec.Command("bash", "-c", cmdPath)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logrus.Errorf("Failed to execute %s: %s", cmdPath, err)
-		return "", err
+	for _, file := range files {
+		if !isExecutable(file.Mode()) || !strings.HasPrefix(file.Name(), "OS_") {
+			continue
+		}
+
+		cmdPath := filepath.Join(autobotsDir, file.Name())
+		output, err := RunAutoBotCommand(cmdPath, instanceArg, false)
+		if err != nil {
+			logrus.Errorf("Error running OS-level command %s: %s", file.Name(), err)
+		}
+
+		description := fmt.Sprintf("[OS] Output from %s", strings.TrimPrefix(file.Name(), "OS_"))
+		jsonData := JSONData{
+			Command:     fmt.Sprintf("Autobot: %s", file.Name()),
+			Description: description,
+			Output:      EncodeToBase64(output),
+			MonitorTag:  fmt.Sprintf("Autobot %s", file.Name()),
+		}
+
+		if err := AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath); err != nil {
+			logrus.Errorf("[Autobots] error appending data to output for OS-level scripts: %v", err)
+		}
 	}
-	return string(output), nil
+
+	logrus.Info("OS-level Autobots scripts executed and results saved.")
+	return nil
 }
-*/
+
+// Handle SDP/P4-level Autobots scripts
+func HandleSDPinstanceAutobotsScripts(OutputJSONFilePath string, instanceArg string) error {
+	files, err := ioutil.ReadDir(autobotsDir)
+	if err != nil {
+		return fmt.Errorf("error reading autobots directory: %w", err)
+	}
+
+	for _, file := range files {
+		if !isExecutable(file.Mode()) || !strings.HasPrefix(file.Name(), "P4_") {
+			continue
+		}
+
+		cmdPath := filepath.Join(autobotsDir, file.Name())
+		output, err := RunAutoBotCommand(cmdPath, instanceArg, true)
+		if err != nil {
+			logrus.Errorf("Error running SDP/P4-level command %s: %s", file.Name(), err)
+		}
+
+		description := fmt.Sprintf("[SDP Instance: %s] Output from %s", instanceArg, strings.TrimPrefix(file.Name(), "P4_"))
+		jsonData := JSONData{
+			Command:     fmt.Sprintf("Autobot: %s", file.Name()),
+			Description: description,
+			Output:      EncodeToBase64(output),
+			MonitorTag:  fmt.Sprintf("Autobot %s", file.Name()),
+		}
+
+		if err := AppendParsedDataToFile([]JSONData{jsonData}, OutputJSONFilePath); err != nil {
+			logrus.Errorf("[Autobots] error appending data to output for SDP/P4-level scripts: %v", err)
+		}
+	}
+
+	logrus.Info("SDP/P4-level Autobots scripts executed and results saved.")
+	return nil
+}

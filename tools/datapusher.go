@@ -14,6 +14,7 @@ import (
 
 const (
 	//http constants
+	// TODO tidy this stuff up laters
 	maxIterations = 5
 	//autoCloudTimeout = 5 * time.Second // assuming 5 seconds for the timeout
 )
@@ -43,13 +44,11 @@ func PushToDataPushGateway(OutputJSONFilePath string, configFilePath string) err
 			return fmt.Errorf("error reading tempLog: %w", err)
 		}
 
-		//		req, err := http.NewRequest("POST", fmt.Sprintf("%s/json/?customer=%s&instance=%s", metricsHost, metricsCustomer, metricsInstance), bytes.NewBuffer(data))
 		req, err := http.NewRequest("POST", fmt.Sprintf("%s/json/?customer=%s&instance=%s", config.Host, config.Customer, config.Instance), bytes.NewBuffer(data))
 
 		if err != nil {
 			return fmt.Errorf("error creating request: %w", err)
 		}
-		//		req.SetBasicAuth(metricsUser, metricsPasswd)
 		req.SetBasicAuth(config.User, config.Passwd)
 		resp, err := client.Do(req)
 		if err != nil {

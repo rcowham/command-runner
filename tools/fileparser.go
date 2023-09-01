@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// TODO Description for instance file parsed FIX
 // FileParserFromYAMLConfigOs reads a YAML configuration, parses the specified files at server level, and appends the
 // results to the output JSON file.
 // Returns an error if any issues arise during the parsing process.
@@ -74,6 +75,7 @@ func FileParserFromYAMLConfigP4(configFilePath, OutputJSONFilePath, instance str
 
 // parseAndAppendAtOsLevel is an internal function that takes in a filePath, its configuration and an output path.
 // It parses the content based on the configuration and appends the result to the output file.
+// TODO Refactor possibly
 func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, OutputJSONFilePath string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {
@@ -100,6 +102,7 @@ func parseAndAppendAtOsLevel(filePath string, fileConfig schema.FileConfig, Outp
 }
 
 // parseAndAppendAtP4Level is similar to parseAndAppendAtOsLevel, but it's specifically for parsing at the instance level.
+// TODO Refactor possibly
 func parseAndAppendAtP4Level(filePath string, fileConfig schema.FileConfig, OutputJSONFilePath, instanceArg string) error {
 	parsedContent, err := parseContent(filePath, fileConfig)
 	if err != nil {

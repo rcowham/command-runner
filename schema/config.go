@@ -8,18 +8,32 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	ExeDir                   = GetExecutableDir()
+	DefaultCmdConfigYAMLPath string
+
+// OLD	OutputJSONFilePath    = DefaultOutputJSONPath
+// OLD YamlCmdConfigFilePath = DefaultCmdConfigYAMLPath
+)
+
 // Define default paths
 const (
-	DefaultCmdConfigYAMLPath = "configs/cmd_config.yaml"
-	OutputJSONFilePath       = "/tmp/out.json"
-	AutobotsDir              = "autobots"
+	P4baseDir         = "/p4" // TODO make this editable as well. and surely not /p4 consider flags
+	LogFileName       = "command-runner.log"
+	MainLogFilePath   = "/opt/perforce/command-runner/logs/" + LogFileName
+	CmdConfigTamlPath = "configs/cmd_config.yaml"
+	//ExeDefaultCmdConfigYAMLPath = ExeDir + CmdConfigTamlPath
+	//DefaultCmdConfigYAMLPath = "configs/cmd_config.yaml"
+	OutputJSONFilePath = "/tmp/out.json"
+	AutobotsDir        = "autobots"
+	MetricsConfigFile  = "/p4/common/config/.push_metrics.cfg"
+	DefaultP4VarDir    = "/p4/common/config/"
 )
 
-var (
-	//	OutputJSONFilePath    = DefaultOutputJSONPath
-	YamlCmdConfigFilePath = DefaultCmdConfigYAMLPath
-)
-
+func init() {
+	// Assuming ExeDir is a variable that you've defined and initialized somewhere.
+	DefaultCmdConfigYAMLPath = ExeDir + CmdConfigTamlPath
+}
 func GetExecutableDir() string {
 	exePath, err := os.Executable()
 	if err != nil {
@@ -111,12 +125,3 @@ type CommandConfig struct {
 	P4Commands []Command `yaml:"p4_commands"`
 	OsCommands []Command `yaml:"os_commands"`
 }
-
-/* Not feelings this here
-type JSONData struct {
-	Command     string `json:"command"`
-	Description string `json:"description"`
-	Output      string `json:"output"`
-	MonitorTag  string `json:"monitor_tag"`
-}
-*/

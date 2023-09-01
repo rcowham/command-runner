@@ -68,7 +68,6 @@ func GetAWSInstanceIdentityInfo(OutputJSONFilePath string) error {
 	}
 
 	documentURL := fmt.Sprintf("%s/latest/dynamic/instance-identity/document", AWSEndpoint)
-	//documentOUT, err := getAWSEndpoint(token, documentURL)
 	documentOUT, err := getAWSEndpoint(token, documentURL, OutputJSONFilePath)
 
 	if err != nil {
@@ -79,7 +78,6 @@ func GetAWSInstanceIdentityInfo(OutputJSONFilePath string) error {
 	logrus.Debug(string(documentOUT))
 
 	metadataURL := fmt.Sprintf("%s/latest/meta-data/tags/instance/", AWSEndpoint)
-	//metadataOUT, err := getAWSEndpoint(token, metadataURL)
 	metadataOUT, err := getAWSEndpoint(token, metadataURL, OutputJSONFilePath)
 	if err != nil {
 		saveErrorToJSON(OutputJSONFilePath, "GetAWSInstanceIdentityInfo", fmt.Sprintf("Failed to get metadata: %s", err), "AWS metadata")

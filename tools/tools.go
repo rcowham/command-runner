@@ -25,6 +25,12 @@ type JSONData struct {
 var P4dInstalled = false
 var P4dRunning = false
 
+var defaultCmdConfigYAMLPath string
+
+func GetVars(path string) {
+	defaultCmdConfigYAMLPath = path
+}
+
 // Function to read p4_commands (formarly instance_commands) from the YAML file
 func ReadP4CommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
 	logrus.Debug("Reading P4 commands from YAML...")
@@ -92,21 +98,23 @@ func EncodeToBase64(input string) string {
 	return base64.StdEncoding.EncodeToString([]byte(input))
 }
 
-func GetSDPInstances(OutputJSONFilePath string, autobotsArg bool) error {
+// TODO processSDP Instances or global ProcessALLSDP (spelling) but probably want to change this
+func GetSDPInstances(OutputJSONFilePath string, autobotsArg bool, processAllSDPInstances bool, debug bool) error {
 
 	logrus.Debugf("Finding p4d instances")
 
-	baseDir := "/p4"
 	sdpInstanceList := []string{}
 
-	// Read directory /p4
-	entries, err := os.ReadDir(baseDir)
+	// Read directory /p4 aka P4baseDir
+	entries, err := os.ReadDir(schema.P4baseDir) //TODO customizability
 	if err != nil {
-		logrus.Fatalf("Could not read directory %s: %v", baseDir, err)
+		//TODO Look into this fatal
+		logrus.Fatalf("Could not read directory %s: %v", schema.P4baseDir, err) //TODO customizability
+
 	}
 
 	for _, entry := range entries {
-		instancePath := filepath.Join(baseDir, entry.Name(), "root", "db.counters")
+		instancePath := filepath.Join(schema.P4baseDir, entry.Name(), "root", "db.counters") //TODO customizability
 		if _, err := os.Stat(instancePath); err == nil {
 			// If file exists and is readable
 			sdpInstanceList = append(sdpInstanceList, entry.Name())
@@ -115,15 +123,25 @@ func GetSDPInstances(OutputJSONFilePath string, autobotsArg bool) error {
 
 	// Count instances
 	instanceCount := len(sdpInstanceList)
+	if instanceCount == 0 {
+		logrus.Infof("No SDP instances found.")
+		return nil
+	}
 	logrus.Debugf("Found %d SDP instances", instanceCount)
 
 	// Loop through each instance and call workSDPInstance function
 	for _, instanceArg := range sdpInstanceList {
-		handleSDPInstance(OutputJSONFilePath, instanceArg, autobotsArg)
+		if processAllSDPInstances {
+			HandleSDPInstance(OutputJSONFilePath, instanceArg, autobotsArg, debug)
+		}
 	}
+
 	return nil
 }
-func handleSDPInstance(OutputJSONFilePath string, instanceArg string, autobotsArg bool) {
+
+// TODO probably doesn't need debug bool here any more
+func HandleSDPInstance(OutputJSONFilePath string, instanceArg string, autobotsArg bool, debug bool) error {
+
 	// Pass the obtained instance to HandleP4Commands
 	if err := HandleP4Commands(instanceArg, OutputJSONFilePath); err != nil {
 		logrus.Errorf("Error handling P4 commands for instance %s: %v", instanceArg, err)
@@ -133,9 +151,10 @@ func handleSDPInstance(OutputJSONFilePath string, instanceArg string, autobotsAr
 
 	// If autobotsArg is true, run the HandleAutobotsScripts
 	if autobotsArg {
-		logrus.Infof("Running autobots...")
-		HandleAutobotsScripts(OutputJSONFilePath, instanceArg, autobotsArg)
+		logrus.Infof("Running P4 SDP autobots...")
+		HandleSDPinstanceAutobotsScripts(OutputJSONFilePath, instanceArg)
 	}
+	return nil //TODO Sus
 }
 func FindP4D() {
 	// Check if p4d is installed

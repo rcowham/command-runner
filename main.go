@@ -15,15 +15,20 @@ import (
 )
 
 var (
-	cloudProvider      = kingpin.Flag("cloud", "Cloud provider (aws, gcp, azure, or onprem)").Short('c').Default("onprem").String()
-	debug              = kingpin.Flag("debug", "Enable debug logging").Short('d').Bool()
-	OutputJSONFilePath = kingpin.Flag("output", "Path to the output JSON file").Short('o').Default(schema.OutputJSONFilePath).String()
-	instanceArg        = kingpin.Flag("instance", "SDP instance commands argument for the command-runner").Short('i').String()
-	serverArg          = kingpin.Flag("server", "OS commands argument for the command-runner").Short('s').Bool()
-	autoCloudFlag      = kingpin.Flag("autocloud", "Auto detect cloud provider").Bool()
-	autobotsArg        = kingpin.Flag("autobots", "Enable running autobots scripts").Short('a').Bool()
-	MetricsConfigFile  = kingpin.Flag("mcfg", "Path to the metrics configuration file").Default(schema.MetricsConfigFile).Short('m').String()
-	CmdConfigYAMLPath  = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
+	//	autobotsArg             = kingpin.Flag("autobots", "Enable running autobots scripts").Short('a').Bool() // TODO [TEMP]  removed short tor safty
+	debug                   = kingpin.Flag("debug", "Enable debug logging").Short('d').Bool()
+	cloudProvider           = kingpin.Flag("cloud", "Cloud provider (aws, gcp, azure, or onprem)").Short('c').Default("onprem").String()
+	instanceArg             = kingpin.Flag("instance", "SDP instance commands argument for the command-runner").Short('i').String()                        //TODO [TEMP] .Required()
+	ProccessAllSDPinstances = kingpin.Flag("allSDP", "Run on all SDP instances commands argument for the command-runner").Default("false").Hidden().Bool() //TODO [TEMP] Hidden for safety
+	serverArg               = kingpin.Flag("server", "OS commands argument for the command-runner").Short('s').Bool()                                      //TODO [TEMP].Required()
+	autoCloudFlag           = kingpin.Flag("autocloud", "Auto detect cloud provider").Hidden().Bool()                                                      //TODO [TEMP] Hidden for safety
+	autobotsArg             = kingpin.Flag("autobots", "Enable running autobots scripts").Hidden().Bool()                                                  //TODO [TEMP]  Hidden for safety
+	MainLogFilePath         = kingpin.Flag("log", "Path to the write the log file").Short('l').Default(schema.MainLogFilePath).String()                    //[TEMP] .Required()
+	OutputJSONFilePath      = kingpin.Flag("output", "Path to the output JSON file").Short('o').Default(schema.OutputJSONFilePath).String()
+	MetricsConfigFile       = kingpin.Flag("mcfg", "Path to the metrics configuration file").Default(schema.MetricsConfigFile).Short('m').String()
+	//CmdConfigYAMLPath       = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
+	DefaultCmdConfigYAMLPath = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
+	nodelOut                 = kingpin.Flag("nodel", "Delete json data after running [default: true]").Default("false").Bool()
 )
 
 func validateFlags() bool {
@@ -39,34 +44,32 @@ func isValidProvider() bool {
 		return false
 	}
 }
+func GetDefaultCmdConfigYAMLPath() string {
+	return *DefaultCmdConfigYAMLPath
+}
 
 // Check for valid flags
 func isValidFlag() bool {
-	// If both instanceArg and serverArg are specified, return false
-	if *instanceArg != "" && *serverArg {
-		logrus.Error("Flags 'instance' and 'server' should not be used together.")
+	// If no flags are provided
+	if !*debug && *cloudProvider == "onprem" && *instanceArg == "" && !*ProccessAllSDPinstances && !*serverArg && !*autoCloudFlag && !*autobotsArg && *MainLogFilePath == schema.MainLogFilePath && *OutputJSONFilePath == schema.OutputJSONFilePath && *MetricsConfigFile == schema.MetricsConfigFile && *DefaultCmdConfigYAMLPath == schema.DefaultCmdConfigYAMLPath && *nodelOut {
+		logrus.Error("At least one valid flag must be provided.")
+		return false
+	}
+	// Check if only one of 'instance' or 'server' flags is provided
+	// TODO This is temporary as this project evolves
+	if (*instanceArg == "" && *serverArg) || (*instanceArg != "" && !*serverArg) {
+		logrus.Error("Both 'instance' and 'server' flags should be provided together.")
 		return false
 	}
 
-	// If neither instanceArg nor serverArg is provided and autobotsArg is not set, return false
-	if *instanceArg == "" && !*serverArg && !*autobotsArg {
-		logrus.Error("Either 'instance' or 'server' flag should be provided.")
-		return false
-	}
-
-	// If autobotsArg is set and instanceArg is provided, return false
-	if *instanceArg != "" && *autobotsArg {
-		logrus.Error("'autobots' cannot be used with 'instance'.")
-		return false
-	}
-
-	// If autobotsArg is set but serverArg is not provided, return false
-	if !*serverArg && *autobotsArg {
-		logrus.Error("'autobots' requires 'server' to be specified.")
+	// If autobotsArg is set but no context (instance or server) is provided, return false
+	if *autobotsArg && (*instanceArg == "" || !*serverArg) {
+		logrus.Error("'autobots' requires both 'instance' and 'server' to be specified.")
 		return false
 	}
 
 	// If autoCloudFlag is set but serverArg is not provided, return false
+	// (This condition might be redundant now as the serverArg is always expected to be there with instanceArg)
 	if *autoCloudFlag && !*serverArg {
 		logrus.Error("'autocloud' requires 'server' to be specified.")
 		return false
@@ -77,30 +80,41 @@ func isValidFlag() bool {
 		logrus.Error("When using 'autocloud', the 'cloud' flag should not be manually set.")
 		return false
 	}
-
+	// Ensure --log is provided when either --server or --instance is provided
+	//TODO TEMP
+	if (*serverArg || *instanceArg != "") && *MainLogFilePath == "" {
+		logrus.Error("The 'log' flag is required when using 'server' or 'instance'.")
+		return false
+	}
+	if !*serverArg && *instanceArg == "" && !*autobotsArg && !*autoCloudFlag && *cloudProvider == "onprem" && *MainLogFilePath == "" {
+		logrus.Error("At least one valid flag must be provided.")
+		return false
+	}
 	return true
 }
 
 func main() {
+
 	kingpin.UsageTemplate(kingpin.CompactUsageTemplate).Version(version.Print("command-runner")).Author("Will Kreitzmann")
 	kingpin.CommandLine.Help = "Runs a configurable set of commands and collects and reports the results as JSON for server/system monitoring\n"
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
-
-	logrus.Infof("Parsed Flags: cloudProvider=%s, instanceArg=%s, serverArg=%v", *cloudProvider, *instanceArg, *serverArg)
+	// Setting up the logger
+	helpers.SetupLogger(*debug, *MainLogFilePath)
+	//logrus.Infof("Parsed Flags: cloudProvider=%s, instanceArg=%s, serverArg=%v", *cloudProvider, *instanceArg, *serverArg)
+	logrus.Infof("Parsed Flags: debug=%v, cloudProvider=%s, instanceArg=%s, serverArg=%v ...", *debug, *cloudProvider, *instanceArg, *serverArg)
 
 	if !validateFlags() {
 		kingpin.Usage()
 		os.Exit(1)
 	}
 
-	// Setting up the logger
-	helpers.SetupLogger(*debug)
+	tools.GetVars(*DefaultCmdConfigYAMLPath)
 
-	exeDir := schema.GetExecutableDir()
-	schema.YamlCmdConfigFilePath = schema.GetConfigPath(exeDir, *CmdConfigYAMLPath)
+	//exeDir := schema.GetExecutableDir()                                             //TODO MOVE THIS
+	//schema.YamlCmdConfigFilePath = schema.GetConfigPath(exeDir, *CmdConfigYAMLPath) //TODO FIX THIS
 	// Validate the CmdConfig.yaml file
-	if err := schema.ValidateCmdConfigYAML(schema.YamlCmdConfigFilePath); err != nil {
+	if err := schema.ValidateCmdConfigYAML(*DefaultCmdConfigYAMLPath); err != nil {
 		logrus.Fatal("Error validating cmd_config.yaml:", err)
 	}
 
@@ -125,11 +139,22 @@ func main() {
 		if err := tools.HandleOsCommands(*cloudProvider, *OutputJSONFilePath); err != nil {
 			logrus.Fatal("Error handling OS commands:", err)
 		}
+		if *autobotsArg {
+			logrus.Infof("Running P4 SDP autobots...")
+			tools.HandleOSAutobotsScripts(*OutputJSONFilePath, "") //TODO Look at blank
+		}
+		//TODO this doesn't needd to happen ever time does it?
 		tools.FindP4D()
 		if tools.P4dInstalled {
 			// Do something if p4d is installed
-			if err := tools.GetSDPInstances(*OutputJSONFilePath, *autobotsArg); err != nil {
-				logrus.Fatal("Error handling SDP instances:", err)
+			if *ProccessAllSDPinstances {
+				if err := tools.GetSDPInstances(*OutputJSONFilePath, *autobotsArg, true, *debug); err != nil {
+					logrus.Fatal("Error handling SDP instances:", err)
+				}
+			} else { // *allSDPinstances is false
+				if err := tools.GetSDPInstances(*OutputJSONFilePath, *autobotsArg, false, *debug); err != nil {
+					logrus.Fatal("Error handling SDP instances:", err)
+				}
 			}
 		}
 		if tools.P4dRunning {
@@ -137,21 +162,23 @@ func main() {
 		}
 	}
 
+	// Lets party for --instance=
 	if *instanceArg != "" {
-		if err := tools.HandleP4Commands(*instanceArg, *OutputJSONFilePath); err != nil {
+		if err := tools.HandleSDPInstance(*OutputJSONFilePath, *instanceArg, *autobotsArg, *debug); err != nil {
 			logrus.Fatal("Error handling P4 commands:", err)
 		}
 	}
 	if err := tools.PushToDataPushGateway(*OutputJSONFilePath, *MetricsConfigFile); err != nil {
-		logrus.Fatal("Error handling autobots scripts:", err)
+		logrus.Fatal("Error Pushing to Data Push Gateway", err) //TODO this is possible not the right message
 	}
 
-	// Delete the DefaultOutputJSONPath file
-	if err := os.Remove(*OutputJSONFilePath); err != nil {
-		logrus.Errorf("Error deleting file %s: %v", *OutputJSONFilePath, err)
-	} else {
-		logrus.Infof("Successfully deleted file: %s", *OutputJSONFilePath)
+	if !*nodelOut {
+		// Delete the DefaultOutputJSONPath file
+		if err := os.Remove(*OutputJSONFilePath); err != nil {
+			logrus.Errorf("Error deleting file %s: %v", *OutputJSONFilePath, err)
+		} else {
+			logrus.Infof("Successfully deleted file: %s", *OutputJSONFilePath)
+		}
 	}
-
 	logrus.Info("Command-runner completed.")
 }

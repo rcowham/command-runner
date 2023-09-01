@@ -18,8 +18,6 @@ type MetricsConfig struct {
 	CloudType string
 }
 
-const MetricsConfigFile = "/p4/common/config/.push_metrics.cfg"
-
 func ParseMetricsConfig(filePath string) (MetricsConfig, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
