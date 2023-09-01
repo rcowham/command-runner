@@ -10,7 +10,10 @@ import (
 
 var (
 	ExeDir                   = GetExecutableDir()
+	InstanceArg              = "1"
 	DefaultCmdConfigYAMLPath string
+	Vars2SourceFilePath      string
+	CustomSourceVars         bool
 
 // OLD	OutputJSONFilePath    = DefaultOutputJSONPath
 // OLD YamlCmdConfigFilePath = DefaultCmdConfigYAMLPath
@@ -28,11 +31,14 @@ const (
 	AutobotsDir        = "autobots"
 	MetricsConfigFile  = "/p4/common/config/.push_metrics.cfg"
 	DefaultP4VarDir    = "/p4/common/config/"
+	//		command = fmt.Sprintf("source %sp4_%s.vars; %s", schema.DefaultP4VarDir, instanceArg, command)
 )
 
 func init() {
 	// Assuming ExeDir is a variable that you've defined and initialized somewhere.
+
 	DefaultCmdConfigYAMLPath = ExeDir + CmdConfigTamlPath
+	Vars2SourceFilePath = DefaultP4VarDir + "p4_" + InstanceArg + ".vars"
 }
 func GetExecutableDir() string {
 	exePath, err := os.Executable()
@@ -41,7 +47,21 @@ func GetExecutableDir() string {
 	}
 	return filepath.Dir(exePath)
 }
-
+func SetInstanceArg(arg string) {
+	InstanceArg = arg
+	//TODO Set Vars2Source?
+}
+func ReSetVars2SourceFilePath(arg string) {
+	if !CustomSourceVars {
+		// When CustomSourceVars is false
+		logrus.Debugf("No custom vars file. Using: %s", Vars2SourceFilePath)
+		InstanceArg = arg
+		Vars2SourceFilePath = DefaultP4VarDir + "p4_" + arg + ".vars"
+	} else {
+		// When CustomSourceVars is true
+		logrus.Debugf("Custom vars file. Using: %s", Vars2SourceFilePath)
+	}
+}
 func GetConfigPath(basePath, configName string) string {
 	return filepath.Join(basePath, configName)
 }

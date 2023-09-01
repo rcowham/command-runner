@@ -14,7 +14,9 @@ import (
 // Function to execute a shell command and capture its output and error streams
 func ExecuteShellCommand(command string, prependSource bool, instanceArg string) (string, string, error) {
 	if prependSource {
-		command = fmt.Sprintf("source %sp4_%s.vars; %s", schema.DefaultP4VarDir, instanceArg, command)
+		//		command = fmt.Sprintf("source %sp4_%s.vars; %s", schema.DefaultP4VarDir, instanceArg, command)
+		schema.ReSetVars2SourceFilePath(instanceArg)
+		command = fmt.Sprintf("source %s; %s", schema.Vars2SourceFilePath, command)
 	}
 
 	logrus.Debugf("Executing shell command: %s", command)
@@ -48,7 +50,9 @@ func ExecuteShellCommand(command string, prependSource bool, instanceArg string)
 func RunAutoBotCommand(cmdPath string, instanceArg string, prepend bool) (string, error) {
 	prependSourceCmd := ""
 	if prepend {
-		prependSourceCmd = fmt.Sprintf("source %sp4_%s.vars; ", schema.DefaultP4VarDir, instanceArg) //TODO CLEAN UP
+		//prependSourceCmd = fmt.Sprintf("source %sp4_%s.vars; ", schema.DefaultP4VarDir, instanceArg) //TODO CLEAN UP
+		schema.ReSetVars2SourceFilePath(instanceArg)
+		prependSourceCmd = fmt.Sprintf("source %s; ", schema.Vars2SourceFilePath) //TODO CLEAN UP
 	}
 	cmd := exec.Command("/bin/bash", "-c", prependSourceCmd+cmdPath)
 	output, err := cmd.CombinedOutput()

@@ -26,6 +26,7 @@ var (
 	MainLogFilePath         = kingpin.Flag("log", "Path to the write the log file").Short('l').Default(schema.MainLogFilePath).String()                    //[TEMP] .Required()
 	OutputJSONFilePath      = kingpin.Flag("output", "Path to the output JSON file").Short('o').Default(schema.OutputJSONFilePath).String()
 	MetricsConfigFile       = kingpin.Flag("mcfg", "Path to the metrics configuration file").Default(schema.MetricsConfigFile).Short('m').String()
+	Vars2SourceFilePath     = kingpin.Flag("vars", "Path to the metrics configuration file").Default(schema.Vars2SourceFilePath).String()
 	//CmdConfigYAMLPath       = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
 	DefaultCmdConfigYAMLPath = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
 	nodelOut                 = kingpin.Flag("nodel", "Delete json data after running [default: true]").Default("false").Bool()
@@ -90,6 +91,11 @@ func isValidFlag() bool {
 		logrus.Error("At least one valid flag must be provided.")
 		return false
 	}
+	// If --var is set, set schema.CustomSourceVars to true
+	if *Vars2SourceFilePath != schema.Vars2SourceFilePath {
+		schema.CustomSourceVars = true
+		schema.Vars2SourceFilePath = *Vars2SourceFilePath
+	}
 	return true
 }
 
@@ -110,6 +116,7 @@ func main() {
 	}
 
 	tools.GetVars(*DefaultCmdConfigYAMLPath)
+	schema.SetInstanceArg(*instanceArg) //TODO This will need to be part of a loop when allSDP happens or...?
 
 	//exeDir := schema.GetExecutableDir()                                             //TODO MOVE THIS
 	//schema.YamlCmdConfigFilePath = schema.GetConfigPath(exeDir, *CmdConfigYAMLPath) //TODO FIX THIS
