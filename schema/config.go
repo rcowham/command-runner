@@ -21,11 +21,12 @@ var (
 
 // Define default paths
 const (
-	P4baseDir         = "/p4" // TODO make this editable as well. and surely not /p4 consider flags
-	LogFileName       = "command-runner.log"
-	MainLogFilePath   = "/opt/perforce/command-runner/logs/" + LogFileName
-	CmdConfigTamlPath = "configs/cmd_config.yaml"
-	//ExeDefaultCmdConfigYAMLPath = ExeDir + CmdConfigTamlPath
+	P4baseDir       = "/p4" // TODO make this editable as well. and surely not /p4 consider flags
+	LogFileName     = "command-runner.log"
+	MainLogFilePath = "/opt/perforce/command-runner/logs/" + LogFileName
+	//CmdConfigYamlPath = "configs/cmd_config.yaml"
+	CmdConfigYamlFile = "cmd_config.yaml"
+	//ExeDefaultCmdConfigYAMLPath = ExeDir + CmdConfigYamlPath
 	//DefaultCmdConfigYAMLPath = "configs/cmd_config.yaml"
 	OutputJSONFilePath = "/tmp/out.json"
 	AutobotsDir        = "autobots"
@@ -37,7 +38,8 @@ const (
 func init() {
 	// Assuming ExeDir is a variable that you've defined and initialized somewhere.
 
-	DefaultCmdConfigYAMLPath = ExeDir + CmdConfigTamlPath
+	//DefaultCmdConfigYAMLPath = ExeDir + CmdConfigYamlPath
+	DefaultCmdConfigYAMLPath = DefaultP4VarDir + CmdConfigYamlFile
 	Vars2SourceFilePath = DefaultP4VarDir + "p4_" + InstanceArg + ".vars"
 }
 func GetExecutableDir() string {

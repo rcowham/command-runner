@@ -122,5 +122,5 @@ os_commands:
     command: "cat /p4/sdp/Version"
     monitor_tag: SDP Version
   - description: Command-Runner Version
-    command: "$PWD/command-runner-linux-amd64 --version 2>&1"
+    command: "/p4/common/site/bin/command-runner --version 2>&1"
     monitor_tag: Command-Runner Version
