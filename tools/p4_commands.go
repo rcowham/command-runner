@@ -1,12 +1,13 @@
 package tools
 
 import (
+	"command-runner/schema"
 	"fmt"
 )
 
 // HandleInstanceCommands handles execution of instance commands and file parsing
 func HandleP4Commands(instanceArg, OutputJSONFilePath string) error {
-	p4Commands, err := ReadP4CommandsFromYAML(defaultCmdConfigYAMLPath, instanceArg) //TODO fix this
+	p4Commands, err := ReadP4CommandsFromYAML(schema.DefaultCmdConfigYAMLPath, instanceArg) //TODO fix this
 	if err != nil {
 		return fmt.Errorf("failed to read P4 commands from YAML: %w", err)
 	}
@@ -23,7 +24,7 @@ func HandleP4Commands(instanceArg, OutputJSONFilePath string) error {
 		return fmt.Errorf("failed to write JSON to file: %w", err)
 	}
 
-	if err := FileParserFromYAMLConfigP4(defaultCmdConfigYAMLPath, OutputJSONFilePath, instanceArg); err != nil { //TODO fix this
+	if err := FileParserFromYAMLConfigP4(schema.DefaultCmdConfigYAMLPath, OutputJSONFilePath, instanceArg); err != nil { //TODO fix this
 		return fmt.Errorf("failed to parse file from YAML config (instance): %w", err)
 	}
 

@@ -25,12 +25,13 @@ type JSONData struct {
 var P4dInstalled = false
 var P4dRunning = false
 
-var defaultCmdConfigYAMLPath string
+//var defaultCmdConfigYAMLPath string
 
+/*
 func GetVars(path string) {
 	defaultCmdConfigYAMLPath = path
 }
-
+*/
 // Function to read p4_commands (formarly instance_commands) from the YAML file
 func ReadP4CommandsFromYAML(filePath, instanceArg string) ([]schema.Command, error) {
 	logrus.Debug("Reading P4 commands from YAML...")

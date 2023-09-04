@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	autobotsDir       string
+	autobotsDir       = schema.AutobotsDir //TODO Should be editable
 	osScriptsExecuted bool
 )
 
 func init() {
-	exeDir := schema.GetExecutableDir()
-	autobotsDir = schema.GetConfigPath(exeDir, schema.AutobotsDir)
+	//	exeDir := schema.GetExecutableDir()
+	//	autobotsDir = schema.GetConfigPath(exeDir, schema.AutobotsDir)
 }
 
 // HandleAutobotsScripts runs all scripts/binaries in the autobots directory

@@ -89,3 +89,53 @@ func UpdateMetricsConfig(metricsCloudType string) error {
 
 	return nil
 }
+func IsCommandRunnerEnabled(MetricsConfigFile string) bool {
+	file, err := os.Open(MetricsConfigFile)
+	if err != nil {
+		logrus.Errorf("Error opening metrics config file: %v", err)
+		return false
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "enabled=1" {
+			return true
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		logrus.Errorf("Error reading metrics config file: %v", err)
+	}
+
+	return false
+}
+func GetCloudType(MetricsConfigFile string) (string, error) {
+	config, err := ParseMetricsConfig(MetricsConfigFile)
+	if err != nil {
+		return "", err
+	}
+
+	if config.CloudType == "" {
+		return "onprem", nil
+	}
+
+	return config.CloudType, nil
+}
+
+// FetchOrDetermineCloudProvider returns the cloud provider based on flags and configuration.
+func FetchOrDetermineCloudProvider(autoCloudFlag bool, cloudProviderFlag string, metricsConfigFile string) string {
+
+	if cloudProviderFlag == "onprem" { // Default value for the flag
+		// Fetch from .push_metrics.cfg
+		valueFromConfig, err := GetCloudType(metricsConfigFile)
+		if err != nil {
+			logrus.Warnf("Unable to get cloud type from metrics config, defaulting to onprem. Error: %v", err)
+			return "onprem"
+		}
+		return valueFromConfig
+	}
+
+	return cloudProviderFlag
+}

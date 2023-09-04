@@ -13,34 +13,32 @@ var (
 	InstanceArg              = "1"
 	DefaultCmdConfigYAMLPath string
 	Vars2SourceFilePath      string
+	AutobotsDir              string //TODO Should be editable in main.go
 	CustomSourceVars         bool
-
-// OLD	OutputJSONFilePath    = DefaultOutputJSONPath
-// OLD YamlCmdConfigFilePath = DefaultCmdConfigYAMLPath
+	MetricsConfigFile        = "/p4/common/config/.push_metrics.cfg"
 )
 
 // Define default paths
 const (
-	P4baseDir       = "/p4" // TODO make this editable as well. and surely not /p4 consider flags
-	LogFileName     = "command-runner.log"
-	MainLogFilePath = "/opt/perforce/command-runner/logs/" + LogFileName
-	//CmdConfigYamlPath = "configs/cmd_config.yaml"
-	CmdConfigYamlFile = "cmd_config.yaml"
-	//ExeDefaultCmdConfigYAMLPath = ExeDir + CmdConfigYamlPath
-	//DefaultCmdConfigYAMLPath = "configs/cmd_config.yaml"
+	P4baseDir          = "/p4" // TODO make this editable as well. and surely not /p4 consider flags
+	LogFileName        = "command-runner.log"
+	MainLogFilePath    = "/opt/perforce/command-runner/logs/" + LogFileName
+	CmdConfigYamlFile  = "cmd_config.yaml"
 	OutputJSONFilePath = "/tmp/out.json"
-	AutobotsDir        = "autobots"
-	MetricsConfigFile  = "/p4/common/config/.push_metrics.cfg"
 	DefaultP4VarDir    = "/p4/common/config/"
-	//		command = fmt.Sprintf("source %sp4_%s.vars; %s", schema.DefaultP4VarDir, instanceArg, command)
 )
 
 func init() {
 	// Assuming ExeDir is a variable that you've defined and initialized somewhere.
 
-	//DefaultCmdConfigYAMLPath = ExeDir + CmdConfigYamlPath
+	AutobotsDir = ExeDir + "autobots"
 	DefaultCmdConfigYAMLPath = DefaultP4VarDir + CmdConfigYamlFile
 	Vars2SourceFilePath = DefaultP4VarDir + "p4_" + InstanceArg + ".vars"
+
+}
+func SendVars(defpath string, metricspath string) {
+	DefaultCmdConfigYAMLPath = defpath
+	MetricsConfigFile = metricspath
 }
 func GetExecutableDir() string {
 	exePath, err := os.Executable()

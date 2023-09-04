@@ -30,6 +30,7 @@ var (
 	//CmdConfigYAMLPath       = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
 	DefaultCmdConfigYAMLPath = kingpin.Flag("cmdcfg", "Path to the cmd_config.yaml file").Default(schema.DefaultCmdConfigYAMLPath).Short('y').String()
 	nodelOut                 = kingpin.Flag("nodel", "Delete json data after running [default: true]").Default("false").Bool()
+	//TODO Should be editable autobotsdir
 )
 
 func validateFlags() bool {
@@ -107,6 +108,13 @@ func main() {
 	kingpin.Parse()
 	// Setting up the logger
 	helpers.SetupLogger(*debug, *MainLogFilePath)
+
+	if !schema.IsCommandRunnerEnabled(*MetricsConfigFile) {
+		logrus.Info("Command-runner is disabled as per the metrics config file.")
+		return
+	}
+	*cloudProvider = schema.FetchOrDetermineCloudProvider(*autoCloudFlag, *cloudProvider, *MetricsConfigFile)
+
 	//logrus.Infof("Parsed Flags: cloudProvider=%s, instanceArg=%s, serverArg=%v", *cloudProvider, *instanceArg, *serverArg)
 	logrus.Infof("Parsed Flags: debug=%v, cloudProvider=%s, instanceArg=%s, serverArg=%v ...", *debug, *cloudProvider, *instanceArg, *serverArg)
 
@@ -115,7 +123,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	tools.GetVars(*DefaultCmdConfigYAMLPath)
+	//tools.GetVars(*DefaultCmdConfigYAMLPath)
+	schema.SendVars(*DefaultCmdConfigYAMLPath, *MetricsConfigFile)
+
 	schema.SetInstanceArg(*instanceArg) //TODO This will need to be part of a loop when allSDP happens or...?
 
 	//exeDir := schema.GetExecutableDir()                                             //TODO MOVE THIS
@@ -129,7 +139,6 @@ func main() {
 		// If autoCloudFlag is enabled, detect the cloud provider
 		if *autoCloudFlag {
 			detectedCloudProvider, err := tools.DetectCloudProvider()
-			// Assuming you have a function DetectCloudProvider in your tools package
 			if err != nil {
 				logrus.Fatal("Error detecting cloud provider:", err)
 			}
