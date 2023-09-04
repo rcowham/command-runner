@@ -27,12 +27,12 @@ dist:
 	GOOS=windows GOARCH=amd64 go build -o bin/${BINARY}-windows-amd64.exe ${LDFLAGS}
 	rm -f bin/${BINARY}*amd64*.gz
 	rm bin/cmd_config.yaml
-	cp ./configs/cmd_config.yaml bin/
+	cp configs/cmd_config.yaml bin/
 	cd bin && tar czf ${BINARY}-linux-amd64.tar.gz ${BINARY}-linux-amd64 cmd_config.yaml
 	-chmod +x bin/${BINARY}-darwin-amd64
-	-chmod +x bin/${BINARY}-windows-amd64
+	-chmod +x bin/${BINARY}-windows-amd64.exe
 	gzip bin/${BINARY}-darwin-amd64
-	gzip bin/${BINARY}-windows-amd64
+	gzip bin/${BINARY}-windows-amd64.exe
 
 
 
